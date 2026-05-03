@@ -143,69 +143,172 @@ input,select,textarea{font-family:inherit}
 .card-body{padding:16px}
 
 /* ── PRODUCT GRID ── */
-.product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 @media(min-width:500px){.product-grid{grid-template-columns:repeat(3,1fr)}}
 @media(min-width:900px){.product-grid{grid-template-columns:repeat(4,1fr)}}
-.product-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color .2s;display:flex;flex-direction:column}
-.product-card:hover{border-color:#2a2a2a}
-.product-img{aspect-ratio:1;background:#111;overflow:hidden;position:relative;cursor:pointer}
-.product-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
-.product-card:hover .product-img img{transform:scale(1.06)}
-.product-img .no-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#222}
-.product-img .out-badge{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center}
-.product-img .cat-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.7);color:#888;font-size:9px;font-weight:600;padding:3px 7px;border-radius:20px}
-.product-info{padding:10px;flex:1;display:flex;flex-direction:column;gap:4px}
-.product-name{font-size:13px;font-weight:600;color:#fff;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.product-seller{font-size:11px;color:var(--dim)}
-.product-price{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--gold);margin-top:auto;padding-top:4px}
-.product-stock{font-size:10px;color:var(--dim);margin-bottom:4px}
+@media(max-width:400px){.product-grid{grid-template-columns:1fr;gap:10px}}
+
+.product-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  overflow:hidden;
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+  position:relative;
+  cursor:pointer;
+}
+.product-card:hover{
+  border-color:rgba(245,166,35,.35);
+  transform:translateY(-4px);
+  box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 0 1px rgba(245,166,35,.1);
+}
+.product-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(245,166,35,.03) 0%,transparent 60%);
+  opacity:0;transition:opacity .3s;pointer-events:none;z-index:1;border-radius:20px;
+}
+.product-card:hover::before{opacity:1}
+
+.product-img{
+  aspect-ratio:1;background:#0d0d0d;overflow:hidden;position:relative;
+}
+.product-img img{
+  width:100%;height:100%;object-fit:cover;
+  transition:transform .6s cubic-bezier(.4,0,.2,1);
+}
+.product-card:hover .product-img img{transform:scale(1.08)}
+.product-img .no-img{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#1e1e1e;
+  background:linear-gradient(135deg,#0f0f0f,#111);
+}
+.product-img .out-badge{
+  position:absolute;inset:0;background:rgba(0,0,0,.7);
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);
+}
+.product-img .cat-badge{
+  position:absolute;top:8px;left:8px;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+  color:#888;font-size:9px;font-weight:700;
+  padding:3px 8px;border-radius:20px;letter-spacing:.05em;
+  border:1px solid rgba(255,255,255,.06);
+}
+.product-img .new-badge{
+  position:absolute;top:8px;right:8px;
+  background:var(--gold);color:#000;
+  font-size:8px;font-weight:900;
+  padding:3px 7px;border-radius:20px;letter-spacing:.08em;text-transform:uppercase;
+}
+.product-info{padding:12px;flex:1;display:flex;flex-direction:column;gap:4px;position:relative;z-index:2}
+.product-name{
+  font-size:13px;font-weight:600;color:#fff;line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  transition:color .2s;
+}
+.product-card:hover .product-name{color:var(--gold)}
+.product-seller{
+  font-size:10px;color:var(--dim);
+  display:flex;align-items:center;gap:4px;
+}
+.seller-verified{color:var(--gold);font-size:9px}
+.product-price{
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:800;
+  color:var(--gold);margin-top:auto;padding-top:6px;
+}
+.product-stock{font-size:10px;color:var(--dim);margin-bottom:6px}
 .product-stock.out{color:#ef4444}
-.add-cart-btn{width:100%;padding:8px;border-radius:10px;background:var(--gold);color:#000;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;transition:all .2s;border:none;cursor:pointer;font-family:'Syne',sans-serif}
-.add-cart-btn:hover{background:var(--gold2)}
-.add-cart-btn:disabled{background:#1a1a1a;color:var(--dim);cursor:not-allowed}
-.add-cart-btn.adding{background:rgba(245,166,35,.4);cursor:wait}
+
+.add-cart-btn{
+  width:100%;padding:9px;border-radius:12px;
+  background:rgba(245,166,35,.12);color:var(--gold);
+  font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  transition:all .25s;border:1px solid rgba(245,166,35,.2);
+  cursor:pointer;font-family:'Syne',sans-serif;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.add-cart-btn:hover{background:var(--gold);color:#000;border-color:var(--gold)}
+.add-cart-btn:active{transform:scale(.97)}
+.add-cart-btn:disabled{
+  background:#111;color:#333;border-color:#1a1a1a;cursor:not-allowed;transform:none;
+}
+.add-cart-btn.adding{background:rgba(245,166,35,.08);cursor:wait}
+
+/* ripple effect */
+.ripple{position:relative;overflow:hidden}
+.ripple::after{
+  content:'';position:absolute;border-radius:50%;
+  background:rgba(245,166,35,.3);
+  width:0;height:0;top:50%;left:50%;transform:translate(-50%,-50%);
+  transition:width .4s,height .4s,opacity .4s;opacity:1;pointer-events:none;
+}
+.ripple:active::after{width:200px;height:200px;opacity:0}
 
 /* ── CHIP / FILTER ── */
-.chip{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--border2);background:var(--bg3);color:#666;white-space:nowrap;font-family:'DM Sans',sans-serif}
-.chip:hover{color:#fff}
-.chip.active{background:var(--gold);color:#000;border-color:var(--gold)}
-.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-.chips::-webkit-scrollbar{display:none}
+.chip{
+  padding:7px 16px;border-radius:20px;font-size:11px;font-weight:700;
+  cursor:pointer;transition:all .2s;border:1px solid var(--border2);
+  background:var(--bg3);color:#555;white-space:nowrap;
+  font-family:'DM Sans',sans-serif;letter-spacing:.03em;
+}
+.chip:hover{color:#fff;border-color:#333}
+.chip.active{background:var(--gold);color:#000;border-color:var(--gold);font-weight:800}
 
 /* ── SKELETON ── */
-.skel{background:linear-gradient(90deg,#111 25%,#1a1a1a 50%,#111 75%);background-size:200% 100%;animation:skel 1.5s infinite}
+.skel{
+  background:linear-gradient(90deg,#111 25%,#161616 50%,#111 75%);
+  background-size:200% 100%;animation:skel 1.8s ease-in-out infinite;
+  border-radius:8px;
+}
 @keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.product-grid .product-card{animation:fadeUp .4s ease both}
+.product-grid .product-card:nth-child(1){animation-delay:.05s}
+.product-grid .product-card:nth-child(2){animation-delay:.1s}
+.product-grid .product-card:nth-child(3){animation-delay:.15s}
+.product-grid .product-card:nth-child(4){animation-delay:.2s}
+.product-grid .product-card:nth-child(5){animation-delay:.05s}
+.product-grid .product-card:nth-child(6){animation-delay:.1s}
+.product-grid .product-card:nth-child(7){animation-delay:.15s}
+.product-grid .product-card:nth-child(8){animation-delay:.2s}
+
 /* ── HERO ── */
-.hero{position:relative;overflow:hidden;padding:80px 0 60px}
-.hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0f0f0f 0%,var(--bg) 100%)}
-.hero-glow{position:absolute;top:-100px;right:-100px;width:500px;height:500px;background:var(--gold);opacity:.04;border-radius:50%;filter:blur(100px)}
-.hero-content{position:relative;z-index:1;max-width:600px}
-.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:20px;padding:5px 12px;margin-bottom:20px}
+.hero{position:relative;overflow:hidden;padding:70px 0 50px}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(245,166,35,.04) 0%,transparent 60%),linear-gradient(160deg,#0d0d0d 0%,var(--bg) 100%)}
+.hero-glow{position:absolute;top:-80px;right:-80px;width:600px;height:600px;background:var(--gold);opacity:.035;border-radius:50%;filter:blur(120px)}
+.hero-glow2{position:absolute;bottom:-100px;left:-100px;width:400px;height:400px;background:#3b82f6;opacity:.02;border-radius:50%;filter:blur(100px)}
+.hero-content{position:relative;z-index:1;max-width:640px}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:20px;padding:5px 14px;margin-bottom:20px}
 .hero-badge .dot{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.hero-badge span{font-size:11px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:.1em}
-.hero h1{font-family:'Syne',sans-serif;font-size:clamp(32px,5vw,56px);font-weight:800;line-height:1.05;margin-bottom:16px}
-.hero h1 em{font-style:normal;color:var(--gold)}
-.hero p{color:var(--muted);font-size:16px;line-height:1.6;margin-bottom:28px;max-width:420px}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.hero-badge span{font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.12em}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(30px,5vw,54px);font-weight:800;line-height:1.05;margin-bottom:14px}
+.hero h1 em{font-style:normal;color:var(--gold);position:relative}
+.hero p{color:#666;font-size:15px;line-height:1.7;margin-bottom:28px;max-width:420px}
 .hero-btns{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:40px}
-.stats{display:flex;gap:32px}
-.stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff}
-.stat-label{font-size:12px;color:var(--dim);margin-top:2px}
+.stats{display:flex;gap:28px;flex-wrap:wrap}
+.stat-item{position:relative;padding-left:12px}
+.stat-item::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:2px;background:var(--gold);opacity:.4;border-radius:2px}
+.stat-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff}
+.stat-label{font-size:11px;color:var(--dim);margin-top:1px}
 
 /* ── ANNOUNCEMENT ── */
-.ann-banner{background:var(--gold);color:#000;padding:10px 16px}
+.ann-banner{background:linear-gradient(90deg,var(--gold),#f0921a);color:#000;padding:10px 16px}
 .ann-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1200px;margin:0 auto}
-.ann-text{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
-.ann-penting{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;background:rgba(0,0,0,.1);padding:2px 7px;border-radius:20px}
+.ann-text{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}
+.ann-penting{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;background:rgba(0,0,0,.15);padding:2px 8px;border-radius:20px;flex-shrink:0}
 
 /* ── SECTION ── */
-.section{padding:0 0 60px}
+.section{padding:0 0 64px}
 .section-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
-.section-label{font-size:10px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.15em;margin-bottom:4px}
+.section-label{font-size:9px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.2em;margin-bottom:4px}
 .section-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
-.see-all{font-size:13px;color:var(--muted);transition:color .2s;cursor:pointer;background:none;border:none;font-family:inherit}
+.see-all{font-size:12px;color:var(--muted);transition:color .2s;cursor:pointer;background:none;border:none;font-family:inherit;display:flex;align-items:center;gap:4px}
 .see-all:hover{color:var(--gold)}
+.see-all svg{transition:transform .2s}
+.see-all:hover svg{transform:translateX(3px)}
 
 /* ── AUTH PAGE ── */
 .auth-wrap{min-height:100vh;display:flex}
@@ -403,13 +506,26 @@ input,select,textarea{font-family:inherit}
 .empty p{font-size:14px;color:var(--muted);margin-bottom:24px}
 
 /* ── FOOTER ── */
-footer{border-top:1px solid #111;padding:36px 16px;margin-top:auto}
-.foot-inner{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:16px}
-@media(min-width:600px){.foot-inner{flex-direction:row;justify-content:space-between}}
-.foot-links{display:flex;gap:20px}
-.foot-link{font-size:12px;color:var(--dim);transition:color .2s;cursor:pointer;background:none;border:none;font-family:inherit}
+footer{
+  border-top:1px solid #111;
+  background:linear-gradient(180deg,#080808 0%,#050505 100%);
+  padding:40px 16px 24px;margin-top:auto;
+}
+.foot-inner{max-width:1200px;margin:0 auto}
+.foot-top{display:grid;grid-template-columns:1fr;gap:28px;margin-bottom:32px}
+@media(min-width:600px){.foot-top{grid-template-columns:2fr 1fr 1fr}}
+.foot-brand p{font-size:13px;color:#444;line-height:1.6;margin-top:10px;max-width:240px}
+.foot-col-title{font-size:10px;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px}
+.foot-links{display:flex;flex-direction:column;gap:8px}
+.foot-link{font-size:13px;color:#333;transition:color .2s;cursor:pointer;background:none;border:none;font-family:inherit;text-align:left;padding:0}
 .foot-link:hover{color:var(--gold)}
-.foot-copy{font-size:11px;color:#282828;font-family:monospace;text-transform:uppercase;letter-spacing:.1em}
+.foot-bottom{
+  border-top:1px solid #0f0f0f;padding-top:20px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+@media(min-width:600px){.foot-bottom{flex-direction:row;justify-content:space-between}}
+.foot-copy{font-size:11px;color:#222;font-family:monospace;text-transform:uppercase;letter-spacing:.1em}
+.foot-badge{font-size:10px;color:#2a2a2a;display:flex;align-items:center;gap:4px}
 
 /* ── PAGE HEADER ── */
 .page-header{padding:24px 0 16px}
@@ -753,34 +869,43 @@ window.addEventListener('scroll',()=>{ q('navbar').classList.toggle('scrolled',w
 
 // ── HOME ──────────────────────────────────────────────────
 async function renderHome() {
-  el.innerHTML = `<div id="ann-area"></div>
-  <div class="hero"><div class="hero-bg"></div><div class="hero-glow"></div><div class="container"><div class="hero-content">
-    <div class="hero-badge"><span class="dot"></span><span>Official Store</span></div>
-    <h1>Belanja<br><em>Lebih Mudah</em><br>& Aman</h1>
-    <p>Ribuan produk berkualitas dari seller terpercaya. Transaksi aman, pengiriman cepat.</p>
-    <div class="hero-btns">
-      <button class="btn btn-gold" onclick="navigate('search')">Jelajahi Produk</button>
-      ${!STATE.user?`<button class="btn btn-ghost" onclick="navigate('auth',{tab:'register'})">Daftar Gratis</button>`:''}
-    </div>
-    <div class="stats">
-      <div><div class="stat-val">500+</div><div class="stat-label">Produk</div></div>
-      <div><div class="stat-val">80+</div><div class="stat-label">Seller</div></div>
-      <div><div class="stat-val">10K+</div><div class="stat-label">Transaksi</div></div>
-    </div>
-  </div></div></div>
+  const el = q('page-home')
+  el.innerHTML = `
+  <div id="ann-area"></div>
+  <div class="hero">
+    <div class="hero-bg"></div><div class="hero-glow"></div><div class="hero-glow2"></div>
+    <div class="container"><div class="hero-content">
+      <div class="hero-badge"><span class="dot"></span><span>Official Store · Indonesia</span></div>
+      <h1>Belanja<br><em>Lebih Mudah</em><br>& Aman</h1>
+      <p>Ribuan produk berkualitas dari seller terpercaya di Indonesia. Transaksi aman, harga transparan.</p>
+      <div class="hero-btns">
+        <button class="btn btn-gold" onclick="navigate('search')">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Jelajahi Produk
+        </button>
+        ${!STATE.user?`<button class="btn btn-ghost" onclick="navigate('auth',{tab:'register'})">Daftar Gratis</button>`:''}
+      </div>
+      <div class="stats">
+        <div class="stat-item"><div class="stat-val">500+</div><div class="stat-label">Produk</div></div>
+        <div class="stat-item"><div class="stat-val">80+</div><div class="stat-label">Seller</div></div>
+        <div class="stat-item"><div class="stat-val">10K+</div><div class="stat-label">Transaksi</div></div>
+        <div class="stat-item"><div class="stat-val">100%</div><div class="stat-label">Aman</div></div>
+      </div>
+    </div></div>
+  </div>
   <div class="container section">
     <div class="section-head">
-      <div><div class="section-label">Produk</div><div class="section-title">Terbaru</div></div>
-      <button class="see-all" onclick="navigate('search')">Lihat semua →</button>
+      <div><div class="section-label">Koleksi Terbaru</div><div class="section-title">Produk Pilihan</div></div>
+      <button class="see-all" onclick="navigate('search')">Lihat semua <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
     </div>
-    <div class="chips" id="home-cats"><div class="chip active" onclick="homeFilterCat('all',this)">Semua</div></div>
-    <div style="margin-top:16px" id="home-grid"><div class="product-grid">${[...Array(8)].map(()=>`<div class="product-card"><div class="product-img skel" style="aspect-ratio:1"></div><div class="product-info"><div class="skel" style="height:12px;border-radius:6px;width:80%;margin-bottom:8px"></div><div class="skel" style="height:10px;border-radius:6px;width:50%;margin-bottom:12px"></div><div class="skel" style="height:30px;border-radius:10px"></div></div></div>`).join('')}</div></div>
+    <div class="chips" id="home-cats"><div class="chip active" onclick="homeFilterCat('all',this)">✦ Semua</div></div>
+    <div style="margin-top:16px" id="home-grid">${skelGrid(8)}</div>
   </div>`
-  // fetch ann
+
   const {data:anns} = await sb.from('announcements').select('id,title,content,type,is_important').order('is_important',{ascending:false}).order('created_at',{ascending:false}).limit(3)
   const imp = (anns||[]).find(a=>a.is_important)
-  if(imp) q('ann-area').innerHTML=`<div class="ann-banner"><div class="ann-inner"><div class="ann-text"><span class="ann-penting">Penting</span><span>${esc(imp.title)}</span></div></div></div>`
-  // fetch cats
+  if(imp) q('ann-area').innerHTML=`<div class="ann-banner"><div class="ann-inner"><div class="ann-text"><span class="ann-penting">📢 Penting</span><span>${esc(imp.title)}</span></div></div></div>`
+
   if(!STATE.categories.length) {
     const {data:cats} = await sb.from('categories').select('id,name').order('name')
     STATE.categories = cats||[]
@@ -789,16 +914,28 @@ async function renderHome() {
   STATE.categories.forEach(c=>{
     catEl.innerHTML += `<div class="chip" onclick="homeFilterCat('${c.id}',this)">${esc(c.name)}</div>`
   })
-  // fetch products
-  homeFilterCat('all', catEl.querySelector('.chip'))
+  await homeFilterCat('all', catEl.querySelector('.chip'))
+}
+
+function skelGrid(n) {
+  return `<div class="product-grid">${Array.from({length:n}).map(()=>`
+    <div class="product-card" style="pointer-events:none">
+      <div class="product-img skel" style="aspect-ratio:1"></div>
+      <div class="product-info">
+        <div class="skel" style="height:11px;border-radius:6px;width:85%;margin-bottom:6px"></div>
+        <div class="skel" style="height:9px;border-radius:6px;width:50%;margin-bottom:10px"></div>
+        <div class="skel" style="height:13px;border-radius:6px;width:60%;margin-bottom:8px"></div>
+        <div class="skel" style="height:34px;border-radius:12px;margin-top:4px"></div>
+      </div>
+    </div>`).join('')}</div>`
 }
 
 async function homeFilterCat(catId, el) {
   document.querySelectorAll('#home-cats .chip').forEach(c=>c.classList.remove('active'))
   el.classList.add('active')
   const grid = q('home-grid')
-  grid.innerHTML = `<div class="product-grid">${[...Array(8)].map(()=>`<div class="product-card"><div class="product-img skel" style="aspect-ratio:1"></div><div class="product-info"><div class="skel" style="height:12px;border-radius:6px;width:80%;margin-bottom:8px"></div><div class="skel" style="height:10px;border-radius:6px;width:50%;margin-bottom:12px"></div><div class="skel" style="height:30px;border-radius:10px"></div></div></div>`).join('')}</div>`
-  let dbq = sb.from('products').select('id,name,price,stock,product_images(image_url,sort_order),seller:users!seller_id(id,username),category:categories!category_id(id,name)').eq('is_active',true).order('created_at',{ascending:false}).limit(20)
+  grid.innerHTML = skelGrid(8)
+  let dbq = sb.from('products').select('id,name,price,stock,created_at,product_images(image_url,sort_order),seller:users!seller_id(id,username,is_verified),category:categories!category_id(id,name)').eq('is_active',true).order('created_at',{ascending:false}).limit(20)
   if(catId!=='all') dbq = dbq.eq('category_id',catId)
   const {data:prods} = await dbq
   grid.innerHTML = renderProductGrid(prods||[])
@@ -806,27 +943,52 @@ async function homeFilterCat(catId, el) {
 
 // ── SEARCH ────────────────────────────────────────────────
 async function renderSearch(params={}) {
-  _srchCat = ''  // reset tiap buka halaman search
+  _srchCat = ''
   const el = q('page-search')
   const initQ = params.q||''
-  el.innerHTML = `<div class="container" style="padding-top:24px;padding-bottom:60px">
-    <div style="position:relative;margin-bottom:16px">
-      <input id="srch-q" type="text" value="${esc(initQ)}" placeholder="Cari produk..." style="width:100%;background:var(--bg2);border:1px solid var(--border2);color:#fff;border-radius:14px;padding:14px 50px 14px 16px;font-size:14px;outline:none;font-family:inherit;transition:border-color .2s" onfocus="this.style.borderColor='rgba(245,166,35,.5)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')doSearch()"/>
-      <button onclick="doSearch()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:36px;height:36px;background:var(--gold);border-radius:10px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer"><svg width="14" height="14" fill="none" stroke="#000" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
+  el.innerHTML = `
+  <div style="background:linear-gradient(180deg,#0d0d0d 0%,var(--bg) 100%);padding:28px 0 20px;border-bottom:1px solid var(--border);margin-bottom:0">
+    <div class="container">
+      <div style="margin-bottom:6px">
+        <div class="section-label">Temukan Produk</div>
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff">Cari & Filter</div>
+      </div>
+      <div style="position:relative;margin-top:14px">
+        <svg style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#444;pointer-events:none" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="srch-q" type="text" value="${esc(initQ)}"
+          placeholder="Cari produk atau kategori..."
+          style="width:100%;background:#111;border:1px solid var(--border2);color:#fff;border-radius:16px;padding:14px 50px 14px 44px;font-size:14px;outline:none;font-family:inherit;transition:all .2s"
+          onfocus="this.style.borderColor='rgba(245,166,35,.5)';this.style.background='#0f0f0f'"
+          onblur="this.style.borderColor='var(--border2)';this.style.background='#111'"
+          oninput="srchDebounce()"
+          onkeydown="if(event.key==='Enter')doSearch()"/>
+        <button onclick="doSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;background:var(--gold);border-radius:12px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;transition:all .2s" onmouseover="this.style.background='#e09515'" onmouseout="this.style.background='var(--gold)'">
+          <svg width="15" height="15" fill="none" stroke="#000" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+      </div>
     </div>
-    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px">
-      <div class="chips" id="srch-cats" style="flex:1;min-width:0"><div class="chip active" onclick="srchCat('',this)">Semua</div></div>
-      <select id="srch-sort" style="background:var(--bg2);border:1px solid var(--border);color:#888;font-size:12px;border-radius:10px;padding:7px 12px;outline:none;cursor:pointer;font-family:inherit" onchange="doSearch()">
-        <option value="newest">Terbaru</option>
-        <option value="oldest">Terlama</option>
-        <option value="price_asc">Harga: Rendah</option>
-        <option value="price_desc">Harga: Tinggi</option>
+  </div>
+  <div class="container" style="padding-top:16px;padding-bottom:60px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="chips" id="srch-cats" style="flex:1;min-width:0">
+        <div class="chip active" onclick="srchCat('',this)">✦ Semua</div>
+      </div>
+      <select id="srch-sort"
+        style="background:#111;border:1px solid var(--border2);color:#888;font-size:12px;border-radius:12px;padding:8px 14px;outline:none;cursor:pointer;font-family:inherit;flex-shrink:0"
+        onchange="doSearch()">
+        <option value="newest">🕐 Terbaru</option>
+        <option value="oldest">📅 Terlama</option>
+        <option value="price_asc">💰 Harga Terendah</option>
+        <option value="price_desc">💎 Harga Tertinggi</option>
       </select>
     </div>
-    <div id="srch-info" style="font-size:12px;color:var(--dim);margin-bottom:12px"></div>
+    <div id="srch-info" style="font-size:11px;color:var(--dim);margin-bottom:14px;display:flex;align-items:center;gap:6px">
+      <span id="srch-info-text"></span>
+      <button id="srch-reset-btn" onclick="resetFilter()" style="display:none;font-size:11px;color:var(--gold);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline">Reset</button>
+    </div>
     <div id="srch-grid"></div>
   </div>`
-  // cats
+
   if(!STATE.categories.length) {
     const {data:cats} = await sb.from('categories').select('id,name').order('name')
     STATE.categories = cats||[]
@@ -835,17 +997,21 @@ async function renderSearch(params={}) {
   STATE.categories.forEach(c=>{
     catEl.innerHTML += `<div class="chip" onclick="srchCat('${c.id}',this)">${esc(c.name)}</div>`
   })
-  // if cat param
   if(params.cat) {
     const target = [...catEl.querySelectorAll('.chip')].find(c=>c.getAttribute('onclick')?.includes(params.cat))
     if(target) srchCat(params.cat, target)
     else doSearch()
-  } else {
-    doSearch()
-  }
+  } else doSearch()
 }
 
 let _srchCat = ''
+let _srchTimer = null
+
+function srchDebounce() {
+  clearTimeout(_srchTimer)
+  _srchTimer = setTimeout(doSearch, 500)
+}
+
 function srchCat(id, el) {
   document.querySelectorAll('#srch-cats .chip').forEach(c=>c.classList.remove('active'))
   el.classList.add('active')
@@ -857,44 +1023,95 @@ async function doSearch() {
   const qv = q('srch-q')?.value.trim()||''
   const sort = q('srch-sort')?.value||'newest'
   const grid = q('srch-grid')
-  const info = q('srch-info')
+  const infoText = q('srch-info-text')
+  const resetBtn = q('srch-reset-btn')
   if(!grid) return
-  grid.innerHTML = `<div class="product-grid">${[...Array(8)].map(()=>`<div class="product-card"><div class="product-img skel" style="aspect-ratio:1"></div><div class="product-info"><div class="skel" style="height:12px;border-radius:6px;width:80%;margin-bottom:8px"></div><div class="skel" style="height:30px;border-radius:10px"></div></div></div>`).join('')}</div>`
-  let dbq = sb.from('products').select('id,name,price,stock,product_images(image_url,sort_order),seller:users!seller_id(id,username),category:categories!category_id(id,name)').eq('is_active',true)
+
+  grid.innerHTML = skelGrid(8)
+
+  let dbq = sb.from('products')
+    .select('id,name,price,stock,created_at,product_images(image_url,sort_order),seller:users!seller_id(id,username,is_verified),category:categories!category_id(id,name)')
+    .eq('is_active',true)
   if(qv) dbq = dbq.ilike('name',`%${qv}%`)
   if(_srchCat) dbq = dbq.eq('category_id',_srchCat)
-  if(sort==='price_asc') dbq=dbq.order('price',{ascending:true})
-  else if(sort==='price_desc') dbq=dbq.order('price',{ascending:false})
-  else dbq=dbq.order('created_at',{ascending:sort==='oldest'})
+  if(sort==='price_asc') dbq = dbq.order('price',{ascending:true})
+  else if(sort==='price_desc') dbq = dbq.order('price',{ascending:false})
+  else dbq = dbq.order('created_at',{ascending:sort==='oldest'})
+
   const {data:prods} = await dbq.limit(40)
   const list = prods||[]
-  if(info) info.textContent = `${list.length} produk ditemukan${qv?` untuk "${qv}"`:''}` 
-  grid.innerHTML = list.length ? renderProductGrid(list) : `<div class="empty"><div class="empty-icon">🔍</div><h3>Produk tidak ditemukan</h3><p>Coba kata kunci lain</p></div>`
+
+  if(infoText) infoText.textContent = `${list.length} produk${qv?` untuk "${qv}"`:_srchCat?' ditemukan':' tersedia'}`
+  if(resetBtn) resetBtn.style.display = (qv||_srchCat)?'inline':'none'
+
+  grid.innerHTML = renderProductGrid(list)
 }
 
 // ── PRODUCT CARD RENDER ───────────────────────────────────
 function renderProductGrid(prods) {
-  if(!prods.length) return `<div class="empty"><div class="empty-icon">📦</div><h3>Belum ada produk</h3><p>Coba lagi nanti</p></div>`
+  if(!prods.length) return `
+    <div class="empty">
+      <div style="font-size:64px;margin-bottom:16px;filter:grayscale(1);opacity:.4">🔍</div>
+      <h3 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff;margin-bottom:6px">Produk tidak ditemukan</h3>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Coba kata kunci lain atau reset filter</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="resetFilter()">Reset Filter</button>
+        <button class="btn btn-gold btn-sm" onclick="navigate('search')">Lihat Semua Produk</button>
+      </div>
+    </div>`
+
+  const now = Date.now()
   return `<div class="product-grid">${prods.map(p=>{
     const img = firstImg(p)
-    const oos = p.stock===0
-    return `<div class="product-card">
-      <div class="product-img" onclick="navigate('product',{id:'${p.id}'})">
-        ${img?`<img src="${esc(img)}" alt="${esc(p.name)}" loading="lazy">`:`<div class="no-img">${svgImg}</div>`}
-        ${oos?`<div class="out-badge"><span style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#f87171;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase">Habis</span></div>`:''}
-        ${p.category?.name?`<div class="cat-badge">${esc(p.category.name)}</div>`:''}
+    const oos = p.stock === 0
+    const isNew = p.created_at && (now - new Date(p.created_at).getTime()) < 7*24*60*60*1000
+    const sellerVerified = p.seller?.is_verified
+    return `<div class="product-card" onclick="navigate('product',{id:'${p.id}'})">
+      <div class="product-img">
+        ${img
+          ? `<img src="${esc(img)}" alt="${esc(p.name)}" loading="lazy">`
+          : `<div class="no-img">${svgImg}</div>`}
+        ${oos
+          ? `<div class="out-badge"><span style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#f87171;padding:5px 14px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em">Stok Habis</span></div>`
+          : ''}
+        ${p.category?.name
+          ? `<div class="cat-badge">${esc(p.category.name)}</div>`
+          : ''}
+        ${isNew && !oos
+          ? `<div class="new-badge">Baru</div>`
+          : ''}
       </div>
       <div class="product-info">
-        <div class="product-name" onclick="navigate('product',{id:'${p.id}'})">${esc(p.name)}</div>
-        <div class="product-seller">${esc(p.seller?.username||'Seller')}</div>
+        <div class="product-name">${esc(p.name)}</div>
+        <div class="product-seller">
+          <svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          ${esc(p.seller?.username||'Seller')}
+          ${sellerVerified ? `<span class="seller-verified" title="Seller Terverifikasi">✦</span>` : ''}
+        </div>
         <div class="product-price">${rp(p.price)}</div>
-        <div class="product-stock ${oos?'out':''}">${oos?'Stok habis':`Stok: ${p.stock}`}</div>
-        <button class="add-cart-btn ${oos?'disabled':''}" id="acb-${p.id}" onclick="addToCart('${p.id}',this)" ${oos?'disabled':''}>
-          ${oos?'Habis':'+ Keranjang'}
+        <div class="product-stock ${oos?'out':''}">${oos ? 'Stok habis' : `Stok: ${p.stock}`}</div>
+        <button class="add-cart-btn ripple ${oos?'':''}${oos?'disabled':''}"
+          id="acb-${p.id}"
+          onclick="event.stopPropagation();addToCart('${p.id}',this)"
+          ${oos?'disabled':''}>
+          ${oos
+            ? 'Habis'
+            : `<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Keranjang`}
         </button>
       </div>
     </div>`
   }).join('')}</div>`
+}
+
+function resetFilter() {
+  _srchCat = ''
+  document.querySelectorAll('.chip').forEach(c=>{
+    c.classList.remove('active')
+    if(c.getAttribute('onclick')?.includes("''")) c.classList.add('active')
+  })
+  const sq = q('srch-q')
+  if(sq) sq.value = ''
+  doSearch()
 }
 
 async function addToCart(productId, btn) {
@@ -1703,13 +1920,36 @@ async function depSubmit() {
 const FOOTER_HTML = `
   <footer>
     <div class="foot-inner">
-      <div class="logo"><div class="logo-icon">X</div><span class="logo-text">XREZZKY</span></div>
-      <div class="foot-links">
-        <button class="foot-link" onclick="navigate('home')">Beranda</button>
-        <button class="foot-link" onclick="navigate('search')">Produk</button>
-        <button class="foot-link" onclick="navigate('auth')">Masuk</button>
+      <div class="foot-top">
+        <div class="foot-brand">
+          <div class="logo"><div class="logo-icon">X</div><span class="logo-text">XREZZKY</span></div>
+          <p>Marketplace modern Indonesia. Belanja aman, seller terpercaya, harga transparan.</p>
+        </div>
+        <div>
+          <div class="foot-col-title">Navigasi</div>
+          <div class="foot-links">
+            <button class="foot-link" onclick="navigate('home')">Beranda</button>
+            <button class="foot-link" onclick="navigate('search')">Produk</button>
+            <button class="foot-link" onclick="navigate('transactions')">Transaksi</button>
+            <button class="foot-link" onclick="navigate('deposit')">Deposit</button>
+          </div>
+        </div>
+        <div>
+          <div class="foot-col-title">Akun</div>
+          <div class="foot-links">
+            <button class="foot-link" onclick="navigate('auth',{tab:'login'})">Masuk</button>
+            <button class="foot-link" onclick="navigate('auth',{tab:'register'})">Daftar</button>
+            <button class="foot-link" onclick="navigate('profile')">Profil</button>
+          </div>
+        </div>
       </div>
-      <div class="foot-copy">© 2025 XREZZKY OFFICIAL STORE</div>
+      <div class="foot-bottom">
+        <div class="foot-copy">© 2025 XREZZKY OFFICIAL STORE · All rights reserved</div>
+        <div class="foot-badge">
+          <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Transaksi Aman & Terpercaya
+        </div>
+      </div>
     </div>
   </footer>`
 
