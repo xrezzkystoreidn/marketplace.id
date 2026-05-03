@@ -506,10 +506,25 @@ footer{border-top:1px solid #111;padding:36px 16px;margin-top:auto}
 <script>
 // ── SUPABASE ──────────────────────────────────────────────
 const SUPA_URL = 'https://jhxpiksxlqiarocoudwy.supabase.co'
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpoeCIsInJvbGUiOiJhbm9uIn0.placeholder' // ← GANTI INI
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpoeHBpa3N4bHFpYXJvY291ZHd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MDQ4MTgsImV4cCI6MjA5MzI4MDgxOH0.0MVvl9dFMvgNkGjuQisVtynPINUrJoTOFnjSFU0tTB4'
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
   auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
 })
+
+// ── CLOUDINARY ────────────────────────────────────────────
+const CDN_NAME   = 'drjmclzbi'
+const CDN_PRESET = 'xrezzky_unsigned'
+
+async function uploadToCloudinary(file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  fd.append('upload_preset', CDN_PRESET)
+  fd.append('folder', 'xrezzky/avatars')
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CDN_NAME}/image/upload`, {method:'POST',body:fd})
+  const data = await res.json()
+  if(data.error) throw new Error(data.error.message)
+  return data.secure_url
+}
 
 // ── STATE ─────────────────────────────────────────────────
 let STATE = {
@@ -1524,24 +1539,64 @@ async function renderProfile() {
     <div class="page-header"><h1 class="page-title">Profil</h1></div>
     <div class="profile-card">
       <div class="profile-top">
-        <div class="profile-ava">${u.avatar_url?`<img src="${esc(u.avatar_url)}" alt="">`:`<span>${(u.username||u.email||'?')[0].toUpperCase()}</span>`}</div>
+        <div style="position:relative;display:inline-block">
+          <div class="profile-ava" id="prof-ava-display">
+            ${u.avatar_url?`<img src="${esc(u.avatar_url)}" alt="">`:`<span>${(u.username||u.email||'?')[0].toUpperCase()}</span>`}
+          </div>
+          <label for="ava-upload" style="position:absolute;bottom:-4px;right:-4px;width:24px;height:24px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg2)" title="Ganti foto">
+            <svg width="11" height="11" fill="none" stroke="#000" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </label>
+          <input type="file" id="ava-upload" accept="image/*" style="display:none" onchange="profileUploadAva(this)"/>
+        </div>
         <div>
           <div class="profile-name">${esc(u.username||'Pengguna')}</div>
           <div class="profile-email">${esc(u.email||'')}</div>
           <span class="role-badge ${u.role==='admin'?'role-admin':u.role==='seller'?'role-seller':'role-buyer'}">${esc(u.role||'buyer')}</span>
         </div>
       </div>
+
       <div class="balance-box">
         <div class="balance-label">Saldo</div>
         <div class="balance-val">Rp ${((u.balance||0)).toLocaleString('id-ID')}</div>
       </div>
+
       <div id="profile-err"></div>
       <div id="profile-succ"></div>
-      <div class="field"><label>Username</label><input id="p-user" type="text" value="${esc(u.username||'')}"/></div>
-      <div class="field"><label>URL Avatar (opsional)</label><input id="p-ava" type="text" value="${esc(u.avatar_url||'')}" placeholder="https://..."/></div>
+
+      <div class="field">
+        <label>Username</label>
+        <input id="p-user" type="text" value="${esc(u.username||'')}"/>
+      </div>
+      <div class="field">
+        <label>URL Avatar</label>
+        <div style="display:flex;gap:8px">
+          <input id="p-ava" type="text" value="${esc(u.avatar_url||'')}" placeholder="https://... atau upload foto di atas"/>
+          <div id="ava-upload-status" style="flex-shrink:0;display:flex;align-items:center;font-size:12px;color:var(--muted);min-width:60px"></div>
+        </div>
+        <div style="font-size:11px;color:var(--dim);margin-top:4px">Klik ikon kamera di foto untuk upload langsung</div>
+      </div>
       <button class="btn btn-gold btn-full" id="p-save-btn" onclick="profileSave()">Simpan Perubahan</button>
     </div>
   </div></div>`
+}
+
+async function profileUploadAva(input) {
+  const file = input.files[0]
+  if(!file) return
+  if(file.size > 5*1024*1024) { showToast('Ukuran file max 5MB','error'); return }
+  const status = q('ava-upload-status')
+  const avaDisplay = q('prof-ava-display')
+  status.innerHTML = `<div class="spin" style="width:14px;height:14px"></div>`
+  try {
+    const url = await uploadToCloudinary(file)
+    q('p-ava').value = url
+    avaDisplay.innerHTML = `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover">`
+    status.innerHTML = `<span style="color:#4ade80">✓ Terupload</span>`
+    showToast('Foto berhasil diupload! ✅')
+  } catch(err) {
+    status.innerHTML = `<span style="color:#f87171">Gagal</span>`
+    showToast('Gagal upload foto: '+err.message, 'error')
+  }
 }
 
 async function profileSave() {
