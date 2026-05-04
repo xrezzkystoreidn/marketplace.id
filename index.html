@@ -2,7 +2,14 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="XREZZKY"/>
+<meta name="theme-color" content="#080808"/>
+<meta name="description" content="XREZZKY Official Store — Marketplace modern Indonesia"/>
+<link rel="manifest" href="manifest.json"/>
 <title>XREZZKY Official Store</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
@@ -15,7 +22,14 @@
   --text:#fff;--muted:#555;--dim:#333;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;overflow-x:hidden}
+*{-webkit-box-sizing:border-box;box-sizing:border-box}
+input,select,textarea,button{-webkit-appearance:none;appearance:none}
+input[type=date]{-webkit-appearance:none;appearance:none;color:#fff}
+/* Safe area for notch/home indicator phones */
+.container{padding-left:max(16px, env(safe-area-inset-left));padding-right:max(16px, env(safe-area-inset-right))}
+#navbar{padding-top:env(safe-area-inset-top)}
+footer{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 h1,h2,h3,.brand{font-family:'Syne',sans-serif}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:#111}
@@ -537,16 +551,58 @@ footer{
 .breadcrumb .sep{color:#333;cursor:default}
 .breadcrumb .current{color:#666;cursor:default}
 
-/* ── RESPONSIVE ── */
+
+/* ── RESPONSIVE & MOBILE FIRST ── */
 @media(max-width:700px){
   .nav-links,.nav-search{display:none}
   .hamburger{display:flex}
-  .auth-stats{gap:20px}
+  .auth-stats{gap:16px}
   .pd-action-row{flex-direction:column}
-  .order-id-val{max-width:100px}
+  .order-id-val{max-width:90px}
+  .stats{gap:16px}
+  .stat-val{font-size:18px}
+  .hero{padding:48px 0 36px}
+  .hero h1{font-size:30px}
+  .section-title{font-size:18px}
+  .profile-wrap{padding:16px 0}
+  .deposit-wrap{padding:16px 0}
+  .pd-grid{padding:16px 0}
+  .cart-layout{padding:16px 0}
+  .order-head{gap:6px}
+  .order-foot{gap:8px}
+  .summary-box{position:static}
+  .auth-left{display:none}
+  .auth-right{padding:20px 16px}
+  .auth-form{padding:16px 0}
+  .filter-bar{flex-direction:column;align-items:flex-start}
+  .sort-select{width:100%}
 }
 @media(min-width:700px){
   .mobile-menu{display:none!important}
+}
+/* Ultra small screens */
+@media(max-width:360px){
+  .product-grid{grid-template-columns:1fr;gap:10px}
+  .btn{padding:10px 14px;font-size:12px}
+  .logo-text{display:none}
+}
+/* Tablet */
+@media(min-width:700px) and (max-width:900px){
+  .product-grid{grid-template-columns:repeat(3,1fr)}
+  .nav-search{max-width:200px}
+}
+/* Touch device optimizations */
+@media(hover:none){
+  .product-card:hover{transform:none;box-shadow:none}
+  .add-cart-btn:hover{background:rgba(245,166,35,.12);color:var(--gold)}
+  .btn-gold:hover{background:var(--gold)}
+  .add-cart-btn:active{background:var(--gold);color:#000;transform:scale(.97)}
+  .btn:active{transform:scale(.97)}
+  .product-card:active{border-color:rgba(245,166,35,.3);transform:scale(.99)}
+}
+/* PWA display */
+@media(display-mode:standalone){
+  #navbar{padding-top:env(safe-area-inset-top)}
 }
 </style>
 </head>
@@ -684,12 +740,18 @@ function getStrength(p) {
 
 // ── NAVIGATION ────────────────────────────────────────────
 function navigate(page, params={}) {
+  // Safety check
+  const pageEl = q(`page-${page}`)
+  if(!pageEl) { console.warn('Page not found:', page); return }
+
   STATE.countdownTimers.forEach(clearInterval)
   STATE.countdownTimers = []
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
-  q(`page-${page}`).classList.add('active')
+  pageEl.classList.add('active')
   STATE.currentPage = page
-  // nav active
+
+  // Nav active state
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'))
   document.querySelectorAll('.m-link').forEach(l=>l.classList.remove('active'))
   if(page==='home') {
@@ -699,40 +761,38 @@ function navigate(page, params={}) {
     q('nl-search')?.classList.add('active')
     q('ml-search')?.classList.add('active')
   }
-  window.scrollTo(0,0)
-  // render
+
+  // Close mobile menu if open
+  closeMobileMenu()
+
+  // Scroll to top
+  window.scrollTo({top:0, behavior:'instant'})
+
+  // Push history for back button
+  if(page !== 'home') history.pushState({page, params}, '', location.pathname)
+
+  // Render page
   switch(page) {
-    case 'home':         renderHome().then(()=>injectFooter('home')); break
-    case 'search':       renderSearch(params); setTimeout(()=>injectFooter('search'),100); break
-    case 'product':      renderProduct(params.id); break
-    case 'cart':         renderCart(); break
-    case 'transactions': renderTransactions(); break
-    case 'auth':         renderAuth(params); break
-    case 'profile':      renderProfile().then(()=>injectFooter('profile')); break
-    case 'deposit':      renderDeposit().then(()=>injectFooter('deposit')); break
+    case 'home':            renderHome().then(()=>injectFooter('home')); break
+    case 'search':          renderSearch(params); setTimeout(()=>injectFooter('search'),200); break
+    case 'product':         if(params.id) renderProduct(params.id); break
+    case 'cart':            renderCart(); break
+    case 'transactions':    renderTransactions(); break
+    case 'auth':            renderAuth(params); break
+    case 'profile':         renderProfile().then(()=>injectFooter('profile')); break
+    case 'deposit':         renderDeposit().then(()=>injectFooter('deposit')); break
     case 'seller-register': renderSellerRegister().then(()=>injectFooter('seller-register')); break
     case 'about':           renderAbout().then(()=>injectFooter('about')); break
+    default: navigate('home')
   }
 }
 
 // ── AUTH ──────────────────────────────────────────────────
 async function initAuth() {
-  const {data:{user}} = await sb.auth.getUser()
-  if(user) await loadUserProfile(user)
+  const {data:{session}} = await sb.auth.getSession()
+  if(session?.user) await loadUserProfile(session.user)
   STATE.loading = false
   updateNavAuth()
-  sb.auth.onAuthStateChange(async(ev,session)=>{
-    if(ev==='SIGNED_IN'||ev==='TOKEN_REFRESHED'||ev==='USER_UPDATED') {
-      await loadUserProfile(session.user)
-      updateNavAuth()
-      if(STATE.currentPage==='auth') navigate('home')
-    } else if(ev==='SIGNED_OUT') {
-      STATE.user = null
-      STATE.cartCount = 0
-      updateNavAuth()
-      navigate('home')
-    }
-  })
 }
 
 async function loadUserProfile(user) {
@@ -750,13 +810,18 @@ async function loadCartCount() {
 
 function updateCartBadge() {
   const btn = q('cart-btn'), badge = q('cart-badge')
+  if(!btn) return
   if(STATE.user) {
     btn.style.display='flex'
     if(STATE.cartCount>0) {
       badge.style.display='flex'
       badge.textContent = STATE.cartCount>9?'9+':STATE.cartCount
-    } else badge.style.display='none'
-  } else btn.style.display='none'
+    } else {
+      if(badge) badge.style.display='none'
+    }
+  } else {
+    btn.style.display='none'
+  }
 }
 
 function updateNavAuth() {
@@ -1575,6 +1640,8 @@ function closeOrderModal() { q('order-modal').classList.remove('open') }
 // ── AUTH PAGE ─────────────────────────────────────────────
 function renderAuth(params={}) {
   if(STATE.user) { navigate('home'); return }
+  // Simpan redirect target
+  if(params.redirect) _authRedirect = params.redirect
   const el = q('page-auth')
   el.innerHTML = `<div class="auth-wrap">
     <div class="auth-left">
@@ -1701,23 +1768,36 @@ function authClearMsg() { const e=q('auth-err'),s=q('auth-succ'); if(e)e.innerHT
 async function authSubmit() {
   authClearMsg()
   if(_authTab==='login') {
-    const email=q('a-email')?.value.trim(),pass=q('a-pass')?.value
+    const email=q('a-email')?.value.trim(), pass=q('a-pass')?.value
     if(!email||!pass){authShowErr('Email dan password wajib diisi.');return}
-    const btn=q('auth-btn'); btn.innerHTML=`<div class="spin"></div>`; btn.disabled=true
+    const btn=q('auth-btn')
+    if(btn){btn.innerHTML=`<div class="spin"></div>`;btn.disabled=true}
     const {data,error}=await sb.auth.signInWithPassword({email,password:pass})
     if(error) {
-      if(error.message.toLowerCase().includes('email not confirmed')) {
+      if(error.message.toLowerCase().includes('email not confirmed')||error.message.includes('Email not confirmed')) {
         q('auth-err').innerHTML=`<div class="err-box"><p>Email belum diverifikasi. Cek inbox/spam.</p><button class="resend-link" onclick="authResend('${esc(email)}')">Kirim ulang email verifikasi →</button></div>`
-      } else if(error.message.includes('Invalid login')) authShowErr('Email atau password salah.')
-      else authShowErr(error.message)
-      btn.innerHTML='Masuk'; btn.disabled=false; return
+      } else if(error.message.toLowerCase().includes('invalid login')||error.message.includes('Invalid login credentials')) {
+        authShowErr('Email atau password salah.')
+      } else {
+        authShowErr(error.message)
+      }
+      if(btn){btn.innerHTML='Masuk';btn.disabled=false}
+      return
     }
     if(!data.user?.email_confirmed_at) {
       await sb.auth.signOut()
       q('auth-err').innerHTML=`<div class="err-box"><p>Email belum diverifikasi.</p><button class="resend-link" onclick="authResend('${esc(email)}')">Kirim ulang →</button></div>`
-      btn.innerHTML='Masuk'; btn.disabled=false; return
+      if(btn){btn.innerHTML='Masuk';btn.disabled=false}
+      return
     }
-    // success — onAuthStateChange handles redirect
+    // Login sukses — load profile dan redirect
+    await loadUserProfile(data.user)
+    updateNavAuth()
+    startCartRealtime()
+    const redirectTo = _authRedirect || 'home'
+    _authRedirect = null
+    navigate(redirectTo)
+
   } else {
     const username=q('a-user')?.value.trim(),email=q('a-email')?.value.trim(),pass=q('a-pass')?.value,confirm=q('a-confirm')?.value
     if(!username){authShowErr('Username wajib diisi.');return}
@@ -1725,12 +1805,20 @@ async function authSubmit() {
     if(!email){authShowErr('Email wajib diisi.');return}
     if(!pass||pass.length<8){authShowErr('Password minimal 8 karakter.');return}
     if(pass!==confirm){authShowErr('Konfirmasi password tidak cocok.');return}
-    const btn=q('auth-btn'); btn.innerHTML=`<div class="spin"></div>`; btn.disabled=true
+    const btn=q('auth-btn')
+    if(btn){btn.innerHTML=`<div class="spin"></div>`;btn.disabled=true}
     const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{username}}})
-    if(error){authShowErr(error.message.includes('already registered')?'Email sudah terdaftar.':error.message); btn.innerHTML='Buat Akun'; btn.disabled=false; return}
-    if(data.user) await sb.from('users').update({username}).eq('id',data.user.id)
-    authShowSucc('Registrasi berhasil! Cek email kamu untuk verifikasi.')
-    q('auth-fields').innerHTML=`<button class="btn btn-gold btn-full" onclick="authRender('login')">Ke Halaman Login</button>`
+    if(error){
+      authShowErr(error.message.includes('already registered')?'Email sudah terdaftar.':error.message)
+      if(btn){btn.innerHTML='Buat Akun';btn.disabled=false}
+      return
+    }
+    if(data.user) {
+      await sb.from('users').update({username}).eq('id',data.user.id)
+    }
+    authShowSucc('Registrasi berhasil! 🎉 Cek email kamu untuk konfirmasi akun.')
+    const fields = q('auth-fields')
+    if(fields) fields.innerHTML=`<button class="btn btn-gold btn-full" onclick="authRender('login')">Masuk ke Akun</button>`
   }
 }
 
@@ -2431,21 +2519,153 @@ function startCartRealtime() {
     .subscribe()
 }
 
+// ── ERROR BOUNDARY ─────────────────────────────────────────
+window.addEventListener('error', e => {
+  console.error('App error:', e.error)
+})
+window.addEventListener('unhandledrejection', e => {
+  console.error('Unhandled promise:', e.reason)
+  // Jangan crash app karena network error
+  if(e.reason?.message?.includes('Failed to fetch') || e.reason?.message?.includes('NetworkError')) {
+    showToast('Koneksi bermasalah. Cek internet kamu.', 'error')
+    e.preventDefault()
+  }
+})
+
+// ── BACK BUTTON (Android) ──────────────────────────────────
+window.addEventListener('popstate', () => {
+  const page = STATE.currentPage
+  if(page !== 'home') navigate('home')
+})
+
+function pushHistory(page) {
+  history.pushState({page}, '', location.pathname)
+}
+
+// ── PULL TO REFRESH ────────────────────────────────────────
+let _touchStartY = 0
+document.addEventListener('touchstart', e => { _touchStartY = e.touches[0].clientY }, {passive:true})
+document.addEventListener('touchmove', e => {
+  const dy = e.touches[0].clientY - _touchStartY
+  if(dy > 80 && window.scrollY === 0) {
+    // light pull to refresh
+  }
+}, {passive:true})
+
 // ── INIT ──────────────────────────────────────────────────
 ;(async()=>{
-  await initAuth()
-  if(STATE.user) startCartRealtime()
-  renderHome()
-  injectFooter('home')
+  try {
+    await initAuth()
+    if(STATE.user) startCartRealtime()
 
-  // sb auth listener untuk start realtime setelah login
-  sb.auth.onAuthStateChange((ev)=>{
-    if(ev==='SIGNED_IN') startCartRealtime()
-    else if(ev==='SIGNED_OUT') {
+    // Handle email confirmation redirect dari Supabase
+    const hash = window.location.hash
+    if(hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=recovery')) {
+      // Supabase sudah handle session dari URL hash
+      await new Promise(r => setTimeout(r, 500)) // tunggu session di-set
+      const {data:{user}} = await sb.auth.getUser()
+      if(user) {
+        await loadUserProfile(user)
+        updateNavAuth()
+        showToast('Email berhasil dikonfirmasi! ✅')
+      }
+      // Bersihkan hash dari URL
+      history.replaceState(null, '', location.pathname)
+    }
+
+    renderHome()
+    injectFooter('home')
+
+  } catch(err) {
+    console.error('Init error:', err)
+    renderHome()
+    injectFooter('home')
+  }
+
+  // Auth state listener - SATU di sini, tidak ada di tempat lain
+  sb.auth.onAuthStateChange(async(ev, session) => {
+    if(ev==='SIGNED_IN' || ev==='TOKEN_REFRESHED') {
+      if(session?.user) {
+        await loadUserProfile(session.user)
+        updateNavAuth()
+        startCartRealtime()
+        if(STATE.currentPage==='auth') navigate('home')
+      }
+    } else if(ev==='USER_UPDATED') {
+      if(session?.user) { await loadUserProfile(session.user); updateNavAuth() }
+    } else if(ev==='SIGNED_OUT') {
+      STATE.user = null
+      STATE.cartCount = 0
       if(window._cartChannel) sb.removeChannel(window._cartChannel)
+      updateNavAuth()
+      if(['cart','transactions','profile','deposit','seller-register'].includes(STATE.currentPage)) navigate('home')
+    } else if(ev==='PASSWORD_RECOVERY') {
+      showToast('Silakan set password baru kamu.')
     }
   })
 })()
 </script>
+
+<!-- PWA MANIFEST inline -->
+<script>
+// Buat manifest.json on-the-fly untuk PWA
+const manifestData = {
+  name: 'XREZZKY Official Store',
+  short_name: 'XREZZKY',
+  description: 'Marketplace modern Indonesia',
+  start_url: './',
+  display: 'standalone',
+  background_color: '#080808',
+  theme_color: '#080808',
+  orientation: 'portrait-primary',
+  icons: [
+    {src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="32" fill="%23f5a623"/><text x="96" y="130" font-size="100" font-weight="900" text-anchor="middle" fill="%23000" font-family="Arial">X</text></svg>', sizes:'192x192', type:'image/svg+xml'},
+    {src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="80" fill="%23f5a623"/><text x="256" y="340" font-size="280" font-weight="900" text-anchor="middle" fill="%23000" font-family="Arial">X</text></svg>', sizes:'512x512', type:'image/svg+xml'}
+  ]
+}
+const blob = new Blob([JSON.stringify(manifestData)], {type:'application/json'})
+const manifestURL = URL.createObjectURL(blob)
+document.querySelector('link[rel="manifest"]')?.setAttribute('href', manifestURL)
+
+// PWA Install prompt
+let _deferredPrompt = null
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault()
+  _deferredPrompt = e
+  // Tampilkan tombol install di profile/home setelah 30 detik
+  setTimeout(() => {
+    if(_deferredPrompt && STATE.currentPage === 'home') {
+      const banner = document.createElement('div')
+      banner.id = 'pwa-banner'
+      banner.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#0f0f0f;border:1px solid rgba(245,166,35,.3);border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:calc(100vw - 32px);animation:slide-up .3s ease'
+      banner.innerHTML = `
+        <div style="width:36px;height:36px;background:var(--gold);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;font-size:18px;color:#000">X</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:#fff">Install XREZZKY App</div>
+          <div style="font-size:11px;color:#555;margin-top:1px">Akses lebih cepat di HP kamu</div>
+        </div>
+        <button onclick="installPWA()" style="background:var(--gold);color:#000;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Syne',sans-serif;flex-shrink:0">Install</button>
+        <button onclick="document.getElementById('pwa-banner')?.remove()" style="background:none;border:none;color:#444;cursor:pointer;padding:4px;flex-shrink:0">✕</button>`
+      document.body.appendChild(banner)
+    }
+  }, 30000)
+})
+
+window.addEventListener('appinstalled', () => {
+  _deferredPrompt = null
+  document.getElementById('pwa-banner')?.remove()
+  showToast('XREZZKY berhasil diinstall! 📱')
+})
+
+function installPWA() {
+  if(!_deferredPrompt) return
+  _deferredPrompt.prompt()
+  _deferredPrompt.userChoice.then(r => {
+    _deferredPrompt = null
+    document.getElementById('pwa-banner')?.remove()
+  })
+}
+</script>
+
 </body>
 </html>
