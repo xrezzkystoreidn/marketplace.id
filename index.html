@@ -600,6 +600,8 @@ footer{
 <div id="page-auth" class="page"></div>
 <div id="page-profile" class="page"></div>
 <div id="page-deposit" class="page"></div>
+<div id="page-seller-register" class="page"></div>
+<div id="page-about" class="page"></div>
 
 <div id="toast"></div>
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
@@ -708,6 +710,8 @@ function navigate(page, params={}) {
     case 'auth':         renderAuth(params); break
     case 'profile':      renderProfile().then(()=>injectFooter('profile')); break
     case 'deposit':      renderDeposit().then(()=>injectFooter('deposit')); break
+    case 'seller-register': renderSellerRegister().then(()=>injectFooter('seller-register')); break
+    case 'about':           renderAbout().then(()=>injectFooter('about')); break
   }
 }
 
@@ -1752,8 +1756,54 @@ async function renderProfile() {
   if(!STATE.user) { navigate('auth',{tab:'login'}); return }
   const u = STATE.user
   const el = q('page-profile')
+
+  // Cek apakah sudah pernah apply seller
+  const {data:existingApp} = await sb.from('seller_applications')
+    .select('id,status').eq('user_id', u.id).maybeSingle()
+
+  const isSeller = u.role === 'seller' || u.role === 'admin'
+  const hasPending = existingApp?.status === 'pending'
+  const wasRejected = existingApp?.status === 'rejected'
+
+  // Banner seller — hanya tampil kalau belum seller & belum apply
+  const sellerBanner = (!isSeller && !hasPending) ? `
+    <div style="background:linear-gradient(135deg,rgba(245,166,35,.12),rgba(245,166,35,.04));border:1px solid rgba(245,166,35,.25);border-radius:20px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:var(--gold);opacity:.06;border-radius:50%;filter:blur(30px)"></div>
+      <div style="display:flex;align-items:flex-start;gap:14px;position:relative">
+        <div style="width:44px;height:44px;background:var(--gold);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="20" height="20" fill="none" stroke="#000" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff;margin-bottom:4px">Buka Toko di XREZZKY</div>
+          <div style="font-size:12px;color:#888;line-height:1.5;margin-bottom:14px">Jangkau ribuan pembeli. Daftarkan toko kamu sekarang dan mulai berjualan!</div>
+          <button class="btn btn-gold btn-sm" onclick="navigate('seller-register')">
+            Daftar Jadi Seller →
+          </button>
+        </div>
+      </div>
+    </div>` : hasPending ? `
+    <div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.2);border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;background:rgba(234,179,8,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" fill="none" stroke="#eab308" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#eab308">Pendaftaran Seller Sedang Diproses</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">Admin akan meninjau dalam 1-3 hari kerja.</div>
+      </div>
+    </div>` : isSeller ? `
+    <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;background:rgba(34,197,94,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#22c55e">Akun Seller Aktif ✦</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">Kamu sudah bisa berjualan di XREZZKY.</div>
+      </div>
+    </div>` : ''
+
   el.innerHTML = `<div class="container"><div class="profile-wrap">
     <div class="page-header"><h1 class="page-title">Profil</h1></div>
+    ${sellerBanner}
     <div class="profile-card">
       <div class="profile-top">
         <div style="position:relative;display:inline-block">
@@ -1771,19 +1821,13 @@ async function renderProfile() {
           <span class="role-badge ${u.role==='admin'?'role-admin':u.role==='seller'?'role-seller':'role-buyer'}">${esc(u.role||'buyer')}</span>
         </div>
       </div>
-
       <div class="balance-box">
         <div class="balance-label">Saldo</div>
         <div class="balance-val">Rp ${((u.balance||0)).toLocaleString('id-ID')}</div>
       </div>
-
       <div id="profile-err"></div>
       <div id="profile-succ"></div>
-
-      <div class="field">
-        <label>Username</label>
-        <input id="p-user" type="text" value="${esc(u.username||'')}"/>
-      </div>
+      <div class="field"><label>Username</label><input id="p-user" type="text" value="${esc(u.username||'')}"/></div>
       <div class="field">
         <label>URL Avatar</label>
         <div style="display:flex;gap:8px">
@@ -1793,6 +1837,9 @@ async function renderProfile() {
         <div style="font-size:11px;color:var(--dim);margin-top:4px">Klik ikon kamera di foto untuk upload langsung</div>
       </div>
       <button class="btn btn-gold btn-full" id="p-save-btn" onclick="profileSave()">Simpan Perubahan</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn btn-ghost btn-sm" onclick="navigate('about')" style="font-size:11px">Tentang & Kebijakan</button>
     </div>
   </div></div>`
 }
@@ -1935,11 +1982,12 @@ const FOOTER_HTML = `
           </div>
         </div>
         <div>
-          <div class="foot-col-title">Akun</div>
+          <div class="foot-col-title">Info</div>
           <div class="foot-links">
             <button class="foot-link" onclick="navigate('auth',{tab:'login'})">Masuk</button>
             <button class="foot-link" onclick="navigate('auth',{tab:'register'})">Daftar</button>
-            <button class="foot-link" onclick="navigate('profile')">Profil</button>
+            <button class="foot-link" onclick="navigate('about')">Tentang & Kebijakan</button>
+            <button class="foot-link" onclick="navigate('seller-register')">Daftar Seller</button>
           </div>
         </div>
       </div>
@@ -1960,6 +2008,417 @@ function injectFooter(pageId) {
   const el = q(`page-${pageId}`)
   if(!el || el.querySelector('footer')) return
   el.insertAdjacentHTML('beforeend', FOOTER_HTML)
+}
+
+}
+
+// ── INDONESIA WILAYAH DATA ────────────────────────────────
+const PULAU = ['Sumatera','Jawa','Kalimantan','Sulawesi','Bali & Nusa Tenggara','Maluku','Papua']
+const PROVINSI = {
+  'Sumatera':['Aceh','Sumatera Utara','Sumatera Barat','Riau','Kepulauan Riau','Jambi','Bengkulu','Sumatera Selatan','Kepulauan Bangka Belitung','Lampung'],
+  'Jawa':['DKI Jakarta','Banten','Jawa Barat','Jawa Tengah','DI Yogyakarta','Jawa Timur'],
+  'Kalimantan':['Kalimantan Barat','Kalimantan Tengah','Kalimantan Selatan','Kalimantan Timur','Kalimantan Utara'],
+  'Sulawesi':['Sulawesi Utara','Gorontalo','Sulawesi Tengah','Sulawesi Barat','Sulawesi Selatan','Sulawesi Tenggara'],
+  'Bali & Nusa Tenggara':['Bali','Nusa Tenggara Barat','Nusa Tenggara Timur'],
+  'Maluku':['Maluku','Maluku Utara'],
+  'Papua':['Papua Barat Daya','Papua Barat','Papua Tengah','Papua Pegunungan','Papua Selatan','Papua']
+}
+const KAB_KOTA = {
+  'Jawa Barat':['Kab. Bogor','Kota Bogor','Kab. Bekasi','Kota Bekasi','Kota Depok','Kab. Bandung','Kota Bandung','Kab. Bandung Barat','Kota Cimahi','Kab. Sukabumi','Kota Sukabumi','Kab. Cianjur','Kab. Garut','Kab. Tasikmalaya','Kota Tasikmalaya','Kab. Ciamis','Kota Banjar','Kab. Pangandaran','Kab. Kuningan','Kab. Cirebon','Kota Cirebon','Kab. Majalengka','Kab. Sumedang','Kab. Indramayu','Kab. Subang','Kab. Purwakarta','Kab. Karawang'],
+  'DKI Jakarta':['Kota Jakarta Pusat','Kota Jakarta Utara','Kota Jakarta Barat','Kota Jakarta Selatan','Kota Jakarta Timur','Kab. Kepulauan Seribu'],
+  'Banten':['Kab. Pandeglang','Kab. Lebak','Kab. Tangerang','Kota Tangerang','Kota Tangerang Selatan','Kab. Serang','Kota Serang','Kota Cilegon'],
+  'Jawa Tengah':['Kab. Cilacap','Kab. Banyumas','Kab. Purbalingga','Kab. Banjarnegara','Kab. Kebumen','Kab. Purworejo','Kab. Wonosobo','Kab. Magelang','Kota Magelang','Kab. Boyolali','Kab. Klaten','Kab. Sukoharjo','Kab. Wonogiri','Kab. Karanganyar','Kab. Sragen','Kab. Grobogan','Kab. Blora','Kab. Rembang','Kab. Pati','Kab. Kudus','Kab. Jepara','Kab. Demak','Kab. Semarang','Kota Semarang','Kota Salatiga','Kab. Temanggung','Kab. Kendal','Kab. Batang','Kab. Pekalongan','Kota Pekalongan','Kab. Pemalang','Kab. Tegal','Kota Tegal','Kab. Brebes'],
+  'DI Yogyakarta':['Kab. Kulon Progo','Kab. Bantul','Kab. Gunung Kidul','Kab. Sleman','Kota Yogyakarta'],
+  'Jawa Timur':['Kab. Pacitan','Kab. Ponorogo','Kab. Trenggalek','Kab. Tulungagung','Kab. Blitar','Kota Blitar','Kab. Kediri','Kota Kediri','Kab. Malang','Kota Malang','Kota Batu','Kab. Lumajang','Kab. Jember','Kab. Banyuwangi','Kab. Bondowoso','Kab. Situbondo','Kab. Probolinggo','Kota Probolinggo','Kab. Pasuruan','Kota Pasuruan','Kab. Sidoarjo','Kab. Mojokerto','Kota Mojokerto','Kab. Jombang','Kab. Nganjuk','Kab. Madiun','Kota Madiun','Kab. Magetan','Kab. Ngawi','Kab. Bojonegoro','Kab. Tuban','Kab. Lamongan','Kab. Gresik','Kab. Bangkalan','Kab. Sampang','Kab. Pamekasan','Kab. Sumenep','Kota Surabaya'],
+  'Aceh':['Kab. Aceh Selatan','Kab. Aceh Tenggara','Kab. Aceh Timur','Kab. Aceh Tengah','Kab. Aceh Barat','Kab. Aceh Besar','Kab. Pidie','Kab. Aceh Utara','Kab. Simeulue','Kab. Aceh Singkil','Kab. Bireuen','Kab. Aceh Barat Daya','Kab. Gayo Lues','Kab. Aceh Jaya','Kab. Nagan Raya','Kab. Aceh Tamiang','Kab. Bener Meriah','Kab. Pidie Jaya','Kota Banda Aceh','Kota Sabang','Kota Langsa','Kota Lhokseumawe','Kota Subulussalam'],
+  'Sumatera Utara':['Kab. Nias','Kab. Mandailing Natal','Kab. Tapanuli Selatan','Kab. Tapanuli Tengah','Kab. Tapanuli Utara','Kab. Toba','Kab. Labuhanbatu','Kab. Asahan','Kab. Simalungun','Kab. Dairi','Kab. Karo','Kab. Deli Serdang','Kab. Langkat','Kab. Nias Selatan','Kab. Humbang Hasundutan','Kab. Pakpak Bharat','Kab. Samosir','Kab. Serdang Bedagai','Kab. Batu Bara','Kab. Padang Lawas Utara','Kab. Padang Lawas','Kab. Labuhanbatu Selatan','Kab. Labuhanbatu Utara','Kab. Nias Utara','Kab. Nias Barat','Kota Sibolga','Kota Tanjungbalai','Kota Pematangsiantar','Kota Tebing Tinggi','Kota Medan','Kota Binjai','Kota Padangsidimpuan','Kota Gunungsitoli'],
+  'Bali':['Kab. Jembrana','Kab. Tabanan','Kab. Badung','Kab. Gianyar','Kab. Klungkung','Kab. Bangli','Kab. Karangasem','Kab. Buleleng','Kota Denpasar'],
+  'Kalimantan Timur':['Kab. Paser','Kab. Kutai Barat','Kab. Kutai Kartanegara','Kab. Kutai Timur','Kab. Berau','Kab. Penajam Paser Utara','Kab. Mahakam Ulu','Kota Balikpapan','Kota Samarinda','Kota Bontang'],
+  'Sulawesi Selatan':['Kab. Kepulauan Selayar','Kab. Bulukumba','Kab. Bantaeng','Kab. Jeneponto','Kab. Takalar','Kab. Gowa','Kab. Sinjai','Kab. Maros','Kab. Pangkajene Kepulauan','Kab. Barru','Kab. Bone','Kab. Soppeng','Kab. Wajo','Kab. Sidenreng Rappang','Kab. Pinrang','Kab. Enrekang','Kab. Luwu','Kab. Tana Toraja','Kab. Luwu Utara','Kab. Luwu Timur','Kab. Toraja Utara','Kota Makassar','Kota Pare-Pare','Kota Palopo'],
+  'default':['Pilih Provinsi dahulu']
+}
+
+function getKabKota(prov) { return KAB_KOTA[prov] || KAB_KOTA['default'] }
+
+// Kecamatan — produksi pakai API wilayah Indonesia
+const KEL_BY_KAB = {
+  'Kab. Bogor':['Kec. Cibinong','Kec. Cileungsi','Kec. Gunung Putri','Kec. Bojonggede','Kec. Citeureup','Kec. Jonggol','Kec. Cariu','Kec. Tanjungsari','Kec. Sukaraja','Kec. Babakan Madang','Kec. Cisarua','Kec. Megamendung','Kec. Ciawi','Kec. Caringin','Kec. Cigombong','Kec. Cijeruk','Kec. Kemang','Kec. Rancabungur','Kec. Parung','Kec. Gunung Sindur','Kec. Rumpin','Kec. Dramaga','Kec. Tajurhalang','Kec. Cibungbulang','Kec. Ciampea','Kec. Tenjolaya','Kec. Leuwiliang','Kec. Leuwisadeng','Kec. Pamijahan','Kec. Cibungbulang','Kec. Ciomas','Kec. Nanggung','Kec. Sukajaya','Kec. Jasinga','Kec. Cigudeg','Kec. Tenjo','Kec. Parung Panjang','Kec. Rumpin','Kec. Ciseeng'],
+  'Kota Bogor':['Kec. Bogor Selatan','Kec. Bogor Timur','Kec. Bogor Utara','Kec. Bogor Tengah','Kec. Bogor Barat','Kec. Tanah Sareal'],
+  'Kota Jakarta Selatan':['Kec. Jagakarsa','Kec. Pasar Minggu','Kec. Cilandak','Kec. Pesanggrahan','Kec. Kebayoran Lama','Kec. Kebayoran Baru','Kec. Mampang Prapatan','Kec. Pancoran','Kec. Tebet','Kec. Setiabudi'],
+  'Kota Jakarta Pusat':['Kec. Gambir','Kec. Sawah Besar','Kec. Kemayoran','Kec. Senen','Kec. Cempaka Putih','Kec. Menteng','Kec. Tanah Abang','Kec. Johar Baru'],
+  'Kota Bandung':['Kec. Bandung Kulon','Kec. Babakan Ciparay','Kec. Bojongloa Kaler','Kec. Bojongloa Kidul','Kec. Astana Anyar','Kec. Regol','Kec. Lengkong','Kec. Bandung Kidul','Kec. Buah Batu','Kec. Rancasari','Kec. Gedebage','Kec. Cibiru','Kec. Panyileukan','Kec. Ujung Berung','Kec. Cinambo','Kec. Arcamanik','Kec. Antapani','Kec. Mandalajati','Kec. Kiaracondong','Kec. Batununggal','Kec. Sumur Bandung','Kec. Andir','Kec. Cicendo','Kec. Bandung Wetan','Kec. Cibeunying Kidul','Kec. Cibeunying Kaler','Kec. Coblong','Kec. Sukajadi','Kec. Sukasari','Kec. Cidadap'],
+  'Kota Surabaya':['Kec. Genteng','Kec. Bubutan','Kec. Simokerto','Kec. Pabean Cantikan','Kec. Semampir','Kec. Krembangan','Kec. Kenjeran','Kec. Bulak','Kec. Tambaksari','Kec. Gubeng','Kec. Rungkut','Kec. Tenggilis Mejoyo','Kec. Gunung Anyar','Kec. Sukolilo','Kec. Mulyorejo','Kec. Sawahan','Kec. Wonokromo','Kec. Karang Pilang','Kec. Dukuh Pakis','Kec. Wiyung','Kec. Gayungan','Kec. Wonocolo','Kec. Jambangan','Kec. Lakarsantri','Kec. Sambikerep','Kec. Tandes','Kec. Sukomanunggal','Kec. Asemrowo','Kec. Benowo','Kec. Pakal','Kec. Wiyung'],
+  'default':['Kec. Pilih Kab/Kota dahulu']
+}
+
+function getKecamatan(kab) { return KEL_BY_KAB[kab] || KEL_BY_KAB['default'] }
+
+// ── SELLER REGISTER ───────────────────────────────────────
+async function renderSellerRegister() {
+  if(!STATE.user) { navigate('auth',{tab:'login'}); return }
+  const u = STATE.user
+  if(u.role==='seller'||u.role==='admin') { navigate('profile'); showToast('Kamu sudah menjadi seller!'); return }
+  const {data:existing} = await sb.from('seller_applications').select('id,status').eq('user_id',u.id).maybeSingle()
+  if(existing?.status==='pending') { navigate('profile'); showToast('Pendaftaran sedang diproses admin.'); return }
+
+  const el = q('page-seller-register')
+  el.innerHTML = `
+  <div style="background:linear-gradient(180deg,#0d0d0d,var(--bg));padding:28px 0 20px;border-bottom:1px solid var(--border)">
+    <div class="container">
+      <button onclick="navigate('profile')" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gold);background:none;border:none;cursor:pointer;font-family:inherit;margin-bottom:16px">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>Kembali ke Profil
+      </button>
+      <div class="section-label">Pendaftaran Toko</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin:4px 0 8px">Daftar Jadi Seller</h1>
+      <p style="font-size:13px;color:#666;max-width:520px">Data kamu bersifat <strong style="color:var(--gold)">RAHASIA</strong> — hanya admin yang bisa melihat. Publik hanya melihat nama toko dan kota/provinsi.</p>
+    </div>
+  </div>
+  <div class="container" style="padding-top:24px;padding-bottom:60px;max-width:700px">
+    <div style="background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.2);border-radius:16px;padding:18px;margin-bottom:24px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:30px;height:30px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="13" height="13" fill="none" stroke="#000" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#fff">Kebijakan Seller XREZZKY</div>
+      </div>
+      <div style="font-size:12px;color:#666;line-height:1.7;max-height:140px;overflow-y:auto" class="scrollbar-none">
+        <p style="margin-bottom:6px"><strong style="color:#999">1. Keaslian Data</strong> — Seller wajib memberikan data identitas yang valid. Data palsu = blokir permanen.</p>
+        <p style="margin-bottom:6px"><strong style="color:#999">2. Produk Legal</strong> — Dilarang menjual produk ilegal, bajakan, atau melanggar hak cipta.</p>
+        <p style="margin-bottom:6px"><strong style="color:#999">3. Kejujuran Transaksi</strong> — Penipuan akan dikenai sanksi dan data identitas dapat diserahkan ke pihak berwenang.</p>
+        <p style="margin-bottom:6px"><strong style="color:#999">4. Privasi Data</strong> — NIK dan data sensitif hanya diakses admin untuk verifikasi dan penegakan hukum.</p>
+        <p><strong style="color:#999">5. Komisi</strong> — Detail komisi platform akan diinformasikan melalui email setelah verifikasi.</p>
+      </div>
+    </div>
+
+    <!-- PROGRESS STEPS -->
+    <div style="display:flex;align-items:center;margin-bottom:28px" id="seller-steps">
+      ${['Data Toko','Identitas','Alamat','Verifikasi'].map((s,i)=>`
+        <div style="flex:1;display:flex;align-items:center">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+            <div id="sc-${i}" style="width:28px;height:28px;border-radius:50%;background:${i===0?'var(--gold)':'#1a1a1a'};border:2px solid ${i===0?'var(--gold)':'#2a2a2a'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${i===0?'#000':'#444'};transition:all .3s;flex-shrink:0">${i+1}</div>
+            <div style="font-size:9px;color:${i===0?'var(--gold)':'#444'};font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap" id="sl-${i}">${s}</div>
+          </div>
+          ${i<3?`<div style="height:2px;flex:1;background:#1a1a1a;margin-bottom:16px;transition:background .3s" id="sline-${i}"></div>`:''}
+        </div>`).join('')}
+    </div>
+
+    <div id="seller-err" style="margin-bottom:12px"></div>
+    <div id="seller-form-area"></div>
+  </div>`
+
+  window._sellerStep = 0
+  window._sellerData = {}
+  renderSellerStep(0)
+}
+
+function updateSellerStepUI(step) {
+  for(let i=0;i<4;i++) {
+    const c=q(`sc-${i}`), l=q(`sl-${i}`), line=q(`sline-${i}`)
+    if(!c) continue
+    if(i<step) {
+      c.style.cssText=`width:28px;height:28px;border-radius:50%;background:#22c55e;border:2px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#000;transition:all .3s;flex-shrink:0`
+      c.innerHTML='✓'; if(l) l.style.color='#22c55e'
+    } else if(i===step) {
+      c.style.cssText=`width:28px;height:28px;border-radius:50%;background:var(--gold);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#000;transition:all .3s;flex-shrink:0`
+      c.innerHTML=i+1; if(l) l.style.color='var(--gold)'
+    } else {
+      c.style.cssText=`width:28px;height:28px;border-radius:50%;background:#1a1a1a;border:2px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#444;transition:all .3s;flex-shrink:0`
+      c.innerHTML=i+1; if(l) l.style.color='#444'
+    }
+    if(line) line.style.background = i<step ? '#22c55e' : '#1a1a1a'
+  }
+}
+
+function renderSellerStep(step) {
+  window._sellerStep = step
+  updateSellerStepUI(step)
+  const area = q('seller-form-area')
+  if(!area) return
+  const fld = (id,label,inp,hint='')=>`<div class="field"><label>${label}</label>${inp}${hint?`<div style="font-size:10px;color:var(--dim);margin-top:4px">${hint}</div>`:''}</div>`
+  const sel = (id,opts,val='',onChange='')=>`<select id="${id}" ${onChange?`onchange="${onChange}"`:''}style="width:100%;background:#111;border:1px solid var(--border2);color:#fff;border-radius:12px;padding:12px 14px;font-size:13px;outline:none;font-family:inherit;cursor:pointer;transition:border-color .2s">${opts}</select>`
+  const inp = (id,type='text',placeholder='',val='',extra='')=>`<input id="${id}" type="${type}" placeholder="${placeholder}" value="${esc(val)}" ${extra} style="width:100%;background:#111;border:1px solid var(--border2);color:#fff;border-radius:12px;padding:12px 14px;font-size:13px;outline:none;font-family:inherit;transition:border-color .2s"/>`
+
+  if(step===0) { area.innerHTML=`
+    <div class="profile-card" style="margin-bottom:16px">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:20px">🏪 Data Toko</div>
+      ${fld('','Nama Toko *',inp('s-name','text','Contoh: Toko Elektronik Jaya',window._sellerData.shop_name||'','maxlength="60"'),'Nama toko yang tampil ke pembeli. Tidak bisa diubah setelah disetujui.')}
+      ${fld('','Deskripsi Toko *',`<textarea id="s-desc" rows="3" maxlength="300" placeholder="Ceritakan produk dan keunggulan toko kamu..." style="width:100%;background:#111;border:1px solid var(--border2);color:#fff;border-radius:12px;padding:12px 14px;font-size:13px;outline:none;font-family:inherit;resize:vertical;transition:border-color .2s">${esc(window._sellerData.shop_desc||'')}</textarea>`)}
+      ${fld('','Kategori Utama *',sel('s-cat',`<option value="">Pilih kategori...</option>${['Elektronik','Fashion & Pakaian','Makanan & Minuman','Kesehatan & Kecantikan','Hobi & Koleksi','Olahraga','Otomotif','Buku & Alat Tulis','Rumah & Taman','Lainnya'].map(c=>`<option value="${c}" ${window._sellerData.shop_category===c?'selected':''}>${c}</option>`).join('')}`))}
+      ${fld('','No. WhatsApp Toko * <span style="color:var(--dim);font-weight:400">(tidak dipublikasikan)</span>',`<div style="position:relative"><span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#555;font-size:13px;font-weight:600">+62</span><input id="s-wa" type="tel" placeholder="8123456789" value="${esc(window._sellerData.shop_wa||'')}" maxlength="13" style="width:100%;background:#111;border:1px solid var(--border2);color:#fff;border-radius:12px;padding:12px 14px 12px 44px;font-size:13px;outline:none;font-family:inherit;transition:border-color .2s" onkeypress="return /[0-9]/.test(event.key)"/></div>`)}
+    </div>
+    <button class="btn btn-gold btn-full" onclick="sellerNext(0)">Lanjut: Data Identitas →</button>`
+
+  } else if(step===1) { area.innerHTML=`
+    <div class="profile-card" style="margin-bottom:16px">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px">🪪 Data Identitas</div>
+      <div style="font-size:11px;color:#555;margin-bottom:20px;display:flex;align-items:center;gap:5px"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>RAHASIA — hanya admin yang bisa akses</div>
+      ${fld('','Nama Lengkap (sesuai KTP) *',inp('s-fullname','text','Nama sesuai KTP',window._sellerData.full_name||'','maxlength="100"'))}
+      ${fld('','NIK (16 digit) *',inp('s-nik','text','Contoh: 3201234567890001',window._sellerData.nik||'','maxlength="16" oninput="this.value=this.value.replace(/[^0-9]/g,\'\')"'),'NIK dari KTP resmi kamu')}
+      ${fld('','Tanggal Lahir *',`<input id="s-dob" type="date" value="${esc(window._sellerData.dob||'')}" style="width:100%;background:#111;border:1px solid var(--border2);color:#fff;border-radius:12px;padding:12px 14px;font-size:13px;outline:none;font-family:inherit;color-scheme:dark;transition:border-color .2s"/>`)}
+      ${fld('','Jenis Kelamin *',sel('s-gender',`<option value="">Pilih...</option><option value="L" ${window._sellerData.gender==='L'?'selected':''}>Laki-laki</option><option value="P" ${window._sellerData.gender==='P'?'selected':''}>Perempuan</option>`))}
+      <div class="field">
+        <label>Foto KTP * <span style="color:var(--dim);font-weight:400">(max 5MB)</span></label>
+        <div id="ktp-area" onclick="q('ktp-file').click()" style="border:2px dashed ${window._sellerData.ktp_url?'#22c55e':'#2a2a2a'};border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='${window._sellerData.ktp_url?'#22c55e':'#2a2a2a'}'">
+          ${window._sellerData.ktp_url
+            ? `<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><svg width="20" height="20" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span style="color:#22c55e;font-size:12px;font-weight:600">Foto KTP terupload ✓</span><span style="color:#555;font-size:10px">Klik untuk ganti</span></div>`
+            : `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><svg width="22" height="22" fill="none" stroke="#444" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span style="color:#555;font-size:12px">Klik upload foto KTP</span><span style="color:#333;font-size:10px">JPG, PNG — max 5MB</span></div>`}
+        </div>
+        <input type="file" id="ktp-file" accept="image/*" style="display:none" onchange="sellerUploadKTP(this)"/>
+        <div id="ktp-status" style="font-size:11px;color:var(--dim);margin-top:4px"></div>
+      </div>
+      ${fld('','No. Rekening Bank *',inp('s-bank','text','Contoh: BCA - 1234567890 - Budi Santoso',window._sellerData.bank_account||''),'Untuk pencairan komisi penjualan')}
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="renderSellerStep(0)" style="flex:1">← Kembali</button>
+      <button class="btn btn-gold" onclick="sellerNext(1)" style="flex:2">Lanjut: Alamat →</button>
+    </div>`
+
+  } else if(step===2) { area.innerHTML=`
+    <div class="profile-card" style="margin-bottom:16px">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px">📍 Alamat Toko</div>
+      <div style="font-size:11px;color:#555;margin-bottom:20px">Publik hanya melihat Kota/Provinsi kamu</div>
+      ${fld('','Pulau *',sel('s-pulau',`<option value="">Pilih Pulau...</option>${PULAU.map(p=>`<option value="${p}" ${window._sellerData.pulau===p?'selected':''}>${p}</option>`).join('')}`,'sellerChangePulau(this.value)'))}
+      ${fld('','Provinsi *',sel('s-prov',`<option value="">Pilih Provinsi...</option>${window._sellerData.pulau?(PROVINSI[window._sellerData.pulau]||[]).map(p=>`<option value="${p}" ${window._sellerData.provinsi===p?'selected':''}>${p}</option>`).join(''):''}`,'sellerChangeProv(this.value)'))}
+      ${fld('','Kabupaten / Kota *',sel('s-kab',`<option value="">Pilih Kab/Kota...</option>${window._sellerData.provinsi?getKabKota(window._sellerData.provinsi).map(k=>`<option value="${k}" ${window._sellerData.kab_kota===k?'selected':''}>${k}</option>`).join(''):''}`,'sellerChangeKab(this.value)'))}
+      ${fld('','Kecamatan *',sel('s-kec',`<option value="">Pilih Kecamatan...</option>${window._sellerData.kab_kota?getKecamatan(window._sellerData.kab_kota).map(k=>`<option value="${k}" ${window._sellerData.kecamatan===k?'selected':''}>${k}</option>`).join(''):''}`))}
+      ${fld('','Kelurahan / Desa *',inp('s-kel','text','Nama kelurahan/desa',window._sellerData.kelurahan||''))}
+      ${fld('','Kode Pos *',`<input id="s-kodepos" type="text" placeholder="Contoh: 16912" value="${esc(window._sellerData.kode_pos||'')}" maxlength="5" style="width:100%;background:#111;border:1px solid var(--border2);color:#fff;border-radius:12px;padding:12px 14px;font-size:13px;outline:none;font-family:inherit;transition:border-color .2s" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>`)}
+      ${fld('','Alamat Lengkap *',`<textarea id="s-alamat" rows="3" maxlength="300" placeholder="Jl. Nama Jalan No. XX, RT/RW..." style="width:100%;background:#111;border:1px solid var(--border2);color:#fff;border-radius:12px;padding:12px 14px;font-size:13px;outline:none;font-family:inherit;resize:vertical">${esc(window._sellerData.alamat_lengkap||'')}</textarea>`)}
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="renderSellerStep(1)" style="flex:1">← Kembali</button>
+      <button class="btn btn-gold" onclick="sellerNext(2)" style="flex:2">Lanjut: Verifikasi →</button>
+    </div>`
+
+  } else if(step===3) {
+    const d = window._sellerData
+    area.innerHTML=`
+    <div class="profile-card" style="margin-bottom:16px">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:20px">📧 Verifikasi Email</div>
+      <div style="background:#0d0d0d;border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:18px">
+        <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Ringkasan Pendaftaran</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
+          ${[['Nama Toko',d.shop_name],['Kategori',d.shop_category],['Nama KTP',d.full_name],['Provinsi',d.provinsi],['Kab/Kota',d.kab_kota],['Kecamatan',d.kecamatan]].map(([k,v])=>`<div><div style="color:#444;font-size:10px">${k}</div><div style="color:#ccc;font-weight:600;margin-top:1px">${esc(v||'-')}</div></div>`).join('')}
+        </div>
+      </div>
+      <div style="background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.15);border-radius:12px;padding:14px;margin-bottom:18px">
+        <p style="font-size:12px;color:#888;line-height:1.6">📧 Kode verifikasi 6 digit akan dikirim ke <strong style="color:#fff">${esc(STATE.user?.email||'')}</strong>. Masukkan kode untuk menyelesaikan pendaftaran.</p>
+      </div>
+      <div id="otp-send-area">
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px">
+          <input type="checkbox" id="s-agree" style="width:14px;height:14px;accent-color:var(--gold);cursor:pointer;margin-top:2px;flex-shrink:0"/>
+          <label for="s-agree" style="font-size:12px;color:#888;cursor:pointer;line-height:1.5">Saya menyetujui <button onclick="navigate('about')" style="color:var(--gold);background:none;border:none;cursor:pointer;font-family:inherit;font-size:12px;text-decoration:underline">Syarat & Ketentuan</button> XREZZKY dan menyatakan seluruh data yang diisi adalah benar dan dapat dipertanggungjawabkan secara hukum.</label>
+        </div>
+        <button class="btn btn-gold btn-full" id="send-otp-btn" onclick="sellerSendOTP()">Kirim Kode Verifikasi ke Email</button>
+      </div>
+      <div id="otp-input-area" style="display:none">
+        <div style="font-size:13px;color:#888;margin-bottom:16px;text-align:center">Masukkan kode 6 digit yang dikirim ke email kamu:</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px">
+          ${Array.from({length:6}).map((_,i)=>`<input type="text" maxlength="1" id="otp-${i}" style="width:44px;height:52px;background:#111;border:2px solid #2a2a2a;color:#fff;border-radius:12px;text-align:center;font-size:22px;font-weight:800;font-family:'Syne',sans-serif;outline:none;transition:all .2s" oninput="otpIn(${i},this)" onkeydown="otpKD(${i},event)" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#2a2a2a'"/>`).join('')}
+        </div>
+        <button class="btn btn-gold btn-full" id="verify-btn" onclick="sellerVerify()">Verifikasi & Daftar Seller ✦</button>
+        <div style="text-align:center;margin-top:12px">
+          <span style="font-size:12px;color:#555" id="cd-wrap">Kirim ulang dalam <span id="cd-sec">60</span>s</span>
+          <button id="resend-btn" onclick="sellerSendOTP()" style="display:none;font-size:12px;color:var(--gold);background:none;border:none;cursor:pointer;font-family:inherit">Kirim ulang kode</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-ghost" onclick="renderSellerStep(2)" style="width:100%">← Kembali</button>`
+  }
+}
+
+function sellerChangePulau(val) {
+  window._sellerData.pulau=val; window._sellerData.provinsi=''; window._sellerData.kab_kota=''; window._sellerData.kecamatan=''
+  const ps=q('s-prov'); if(ps) ps.innerHTML=`<option value="">Pilih Provinsi...</option>${(PROVINSI[val]||[]).map(p=>`<option value="${p}">${p}</option>`).join('')}`
+  const ks=q('s-kab'); if(ks) ks.innerHTML=`<option value="">Pilih Kab/Kota...</option>`
+  const kcs=q('s-kec'); if(kcs) kcs.innerHTML=`<option value="">Pilih Kecamatan...</option>`
+}
+function sellerChangeProv(val) {
+  window._sellerData.provinsi=val; window._sellerData.kab_kota=''; window._sellerData.kecamatan=''
+  const ks=q('s-kab'); if(ks) ks.innerHTML=`<option value="">Pilih Kab/Kota...</option>${getKabKota(val).map(k=>`<option value="${k}">${k}</option>`).join('')}`
+  const kcs=q('s-kec'); if(kcs) kcs.innerHTML=`<option value="">Pilih Kecamatan...</option>`
+}
+function sellerChangeKab(val) {
+  window._sellerData.kab_kota=val; window._sellerData.kecamatan=''
+  const kcs=q('s-kec'); if(kcs) kcs.innerHTML=`<option value="">Pilih Kecamatan...</option>${getKecamatan(val).map(k=>`<option value="${k}">${k}</option>`).join('')}`
+}
+
+async function sellerUploadKTP(input) {
+  const file=input.files[0]; if(!file) return
+  if(file.size>5*1024*1024) { showToast('File max 5MB','error'); return }
+  const st=q('ktp-status'), area=q('ktp-area')
+  if(st) st.innerHTML=`<div style="display:flex;align-items:center;gap:6px"><div class="spin" style="width:12px;height:12px"></div>Mengupload...</div>`
+  try {
+    const url=await uploadToCloudinary(file)
+    window._sellerData.ktp_url=url
+    if(area) { area.style.borderColor='#22c55e'; area.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><svg width="20" height="20" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span style="color:#22c55e;font-size:12px;font-weight:600">Foto KTP terupload ✓</span><span style="color:#555;font-size:10px">Klik untuk ganti</span></div>` }
+    if(st) st.innerHTML=''
+    showToast('Foto KTP berhasil diupload! ✅')
+  } catch(err) {
+    if(st) st.innerHTML=`<span style="color:#f87171">Gagal: ${esc(err.message)}</span>`
+    showToast('Gagal upload: '+err.message,'error')
+  }
+}
+
+function sellerNext(step) {
+  const errEl=q('seller-err'); if(errEl) errEl.innerHTML=''
+  const err=(msg)=>{ if(errEl){errEl.innerHTML=`<div class="err-box"><p>${msg}</p></div>`; errEl.scrollIntoView({behavior:'smooth',block:'center'})} }
+  if(step===0) {
+    const name=q('s-name')?.value.trim(), desc=q('s-desc')?.value.trim(), cat=q('s-cat')?.value, wa=q('s-wa')?.value.trim()
+    if(!name||name.length<3) return err('Nama toko minimal 3 karakter.')
+    if(!desc||desc.length<20) return err('Deskripsi minimal 20 karakter.')
+    if(!cat) return err('Pilih kategori toko.')
+    if(!wa||wa.length<9) return err('Nomor WhatsApp tidak valid.')
+    Object.assign(window._sellerData,{shop_name:name,shop_desc:desc,shop_category:cat,shop_wa:wa})
+    renderSellerStep(1)
+  } else if(step===1) {
+    const fn=q('s-fullname')?.value.trim(), nik=q('s-nik')?.value.trim(), dob=q('s-dob')?.value, gen=q('s-gender')?.value, bank=q('s-bank')?.value.trim()
+    if(!fn||fn.length<3) return err('Nama lengkap wajib diisi.')
+    if(!nik||nik.length!==16) return err('NIK harus 16 digit.')
+    if(!dob) return err('Tanggal lahir wajib diisi.')
+    if(!gen) return err('Jenis kelamin wajib dipilih.')
+    if(!window._sellerData.ktp_url) return err('Foto KTP wajib diupload.')
+    if(!bank||bank.length<10) return err('Info rekening bank wajib diisi.')
+    Object.assign(window._sellerData,{full_name:fn,nik,dob,gender:gen,bank_account:bank})
+    renderSellerStep(2)
+  } else if(step===2) {
+    const pulau=q('s-pulau')?.value, prov=q('s-prov')?.value, kab=q('s-kab')?.value, kec=q('s-kec')?.value, kel=q('s-kel')?.value.trim(), kp=q('s-kodepos')?.value.trim(), al=q('s-alamat')?.value.trim()
+    if(!pulau) return err('Pilih pulau.')
+    if(!prov) return err('Pilih provinsi.')
+    if(!kab) return err('Pilih kabupaten/kota.')
+    if(!kec) return err('Pilih kecamatan.')
+    if(!kel) return err('Kelurahan/desa wajib diisi.')
+    if(!kp||kp.length!==5) return err('Kode pos harus 5 digit.')
+    if(!al||al.length<10) return err('Alamat lengkap wajib diisi.')
+    Object.assign(window._sellerData,{pulau,provinsi:prov,kab_kota:kab,kecamatan:kec,kelurahan:kel,kode_pos:kp,alamat_lengkap:al})
+    renderSellerStep(3)
+  }
+}
+
+function otpIn(i,el) {
+  el.value=el.value.replace(/[^0-9]/g,'')
+  if(el.value&&i<5) q(`otp-${i+1}`)?.focus()
+}
+function otpKD(i,e) {
+  if(e.key==='Backspace'&&!e.target.value&&i>0) q(`otp-${i-1}`)?.focus()
+  if(e.key==='ArrowLeft'&&i>0) q(`otp-${i-1}`)?.focus()
+  if(e.key==='ArrowRight'&&i<5) q(`otp-${i+1}`)?.focus()
+}
+
+async function sellerSendOTP() {
+  if(!q('s-agree')?.checked) { showToast('Centang persetujuan syarat & ketentuan dahulu.','error'); return }
+  const btn=q('send-otp-btn'); if(btn){btn.innerHTML=`<div class="spin"></div>`;btn.disabled=true}
+  const otp=String(Math.floor(100000+Math.random()*900000))
+  const exp=new Date(Date.now()+10*60*1000).toISOString()
+  const {error}=await sb.from('seller_otps').upsert({user_id:STATE.user.id,otp_code:otp,expires_at:exp},{onConflict:'user_id'})
+  if(error){showToast('Gagal mengirim OTP: '+error.message,'error');if(btn){btn.innerHTML='Kirim Kode Verifikasi ke Email';btn.disabled=false};return}
+  // DEV: tampilkan OTP di console — HAPUS DI PRODUKSI, ganti dengan edge function kirim email
+  console.warn('🔑 DEV OTP (hapus di produksi):', otp)
+  showToast(`Kode OTP dikirim ke ${STATE.user.email}`)
+  const send=q('otp-send-area'), inp2=q('otp-input-area')
+  if(send) send.style.display='none'
+  if(inp2) inp2.style.display='block'
+  q('otp-0')?.focus()
+  let sec=60
+  clearInterval(window._otpCd)
+  window._otpCd=setInterval(()=>{
+    sec--; const t=q('cd-sec'); if(t) t.textContent=sec
+    if(sec<=0){clearInterval(window._otpCd);const w=q('cd-wrap'),rb=q('resend-btn');if(w)w.style.display='none';if(rb)rb.style.display='inline'}
+  },1000)
+}
+
+async function sellerVerify() {
+  const code=Array.from({length:6}).map((_,i)=>q(`otp-${i}`)?.value||'').join('')
+  if(code.length!==6){showToast('Masukkan 6 digit kode OTP.','error');return}
+  const btn=q('verify-btn'); if(btn){btn.innerHTML=`<div class="spin"></div>`;btn.disabled=true}
+  const {data:od,error:oe}=await sb.from('seller_otps').select('otp_code,expires_at').eq('user_id',STATE.user.id).single()
+  if(oe||!od){showToast('Kode tidak valid.','error');if(btn){btn.innerHTML='Verifikasi & Daftar Seller ✦';btn.disabled=false};return}
+  if(od.otp_code!==code){
+    Array.from({length:6}).forEach((_,i)=>{const el=q(`otp-${i}`);if(el)el.style.borderColor='#ef4444'})
+    showToast('Kode OTP salah.','error');if(btn){btn.innerHTML='Verifikasi & Daftar Seller ✦';btn.disabled=false};return
+  }
+  if(new Date(od.expires_at)<new Date()){showToast('Kode OTP kadaluarsa.','error');if(btn){btn.innerHTML='Verifikasi & Daftar Seller ✦';btn.disabled=false};return}
+  const d=window._sellerData
+  const {error:se}=await sb.from('seller_applications').insert({
+    user_id:STATE.user.id,email:STATE.user.email,
+    shop_name:d.shop_name,shop_description:d.shop_desc,shop_category:d.shop_category,shop_whatsapp:'+62'+d.shop_wa,
+    full_name:d.full_name,nik:d.nik,date_of_birth:d.dob,gender:d.gender,ktp_url:d.ktp_url,bank_account:d.bank_account,
+    pulau:d.pulau,provinsi:d.provinsi,kab_kota:d.kab_kota,kecamatan:d.kecamatan,kelurahan:d.kelurahan,kode_pos:d.kode_pos,alamat_lengkap:d.alamat_lengkap,
+    status:'pending'
+  })
+  if(se){showToast('Gagal submit: '+se.message,'error');if(btn){btn.innerHTML='Verifikasi & Daftar Seller ✦';btn.disabled=false};return}
+  await sb.from('seller_otps').delete().eq('user_id',STATE.user.id)
+  clearInterval(window._otpCd)
+  updateSellerStepUI(4)
+  const area=q('seller-form-area')
+  if(area) area.innerHTML=`
+    <div style="text-align:center;padding:48px 20px">
+      <div style="width:72px;height:72px;background:rgba(34,197,94,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;border:2px solid rgba(34,197,94,.3)">
+        <svg width="32" height="32" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:10px">Pendaftaran Terkirim! 🎉</div>
+      <p style="font-size:13px;color:#666;line-height:1.7;margin-bottom:8px;max-width:380px;margin-left:auto;margin-right:auto">Admin akan meninjau dalam <strong style="color:#fff">1-3 hari kerja</strong>.</p>
+      <p style="font-size:12px;color:#555;margin-bottom:28px">Notifikasi akan dikirim ke <strong style="color:var(--gold)">${esc(STATE.user.email)}</strong>.</p>
+      <button class="btn btn-gold" onclick="navigate('profile')">Kembali ke Profil</button>
+    </div>`
+  showToast('Pendaftaran berhasil dikirim! ✅')
+}
+
+// ── ABOUT / VISI MISI / KEBIJAKAN ────────────────────────
+async function renderAbout() {
+  const el=q('page-about')
+  const section=(label,title,content)=>`
+    <div style="margin-bottom:48px">
+      <div class="section-label" style="margin-bottom:8px">${label}</div>
+      <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:16px">${title}</h2>
+      ${content}
+    </div>`
+
+  el.innerHTML=`
+  <div style="background:linear-gradient(180deg,#0d0d0d,var(--bg));padding:40px 0 24px;border-bottom:1px solid var(--border)">
+    <div class="container" style="max-width:800px">
+      <div class="logo" style="margin-bottom:20px"><div class="logo-icon">X</div><span class="logo-text">XREZZKY</span></div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,42px);font-weight:800;line-height:1.1;margin-bottom:10px">Official <em style="font-style:normal;color:var(--gold)">Store</em></h1>
+      <p style="color:#555;font-size:14px;line-height:1.7;max-width:480px">Marketplace modern Indonesia — Aman, Terpercaya, Transparan.</p>
+    </div>
+  </div>
+  <div class="container" style="max-width:800px;padding-top:40px;padding-bottom:80px">
+
+    ${section('Tentang Kami','Siapa XREZZKY?',`
+      <div style="font-size:14px;color:#666;line-height:1.8">
+        <p style="margin-bottom:12px">XREZZKY adalah platform marketplace digital Indonesia yang menghubungkan pembeli dan seller terpercaya dalam satu ekosistem yang aman, modern, dan transparan.</p>
+        <p style="margin-bottom:12px">Kami percaya transaksi online harus bebas penipuan. Setiap seller telah melalui verifikasi identitas ketat — sehingga kamu bisa belanja dengan tenang.</p>
+        <p>Hadir dengan semangat memajukan ekonomi digital Indonesia, XREZZKY menjadi rumah bagi ribuan seller jujur dan jutaan pembeli cerdas.</p>
+      </div>`)}
+
+    ${section('Visi & Misi','Tujuan Kami',`
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:22px;border-left:4px solid var(--gold)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:20px">👁</span><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--gold)">Visi</div></div>
+          <p style="font-size:14px;color:#aaa;line-height:1.7;font-style:italic">"Menjadi marketplace digital Indonesia paling terpercaya, di mana setiap transaksi dijamin aman dan setiap seller diverifikasi identitasnya."</p>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:22px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><span style="font-size:20px">🎯</span><div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff">Misi</div></div>
+          ${[['🔐','Membangun sistem verifikasi seller ketat untuk melindungi pembeli'],['🤝','Menciptakan ekosistem perdagangan jujur, transparan, dan saling menguntungkan'],['🚀','Memberdayakan UMKM dan seller individu Indonesia di era digital'],['⚡','Menghadirkan pengalaman belanja cepat, mudah, dan menyenangkan'],['🛡️','Menjaga keamanan data pengguna dengan standar enkripsi tertinggi']].map(([icon,text])=>`<div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:13px;flex-shrink:0">${icon}</span><span style="font-size:13px;color:#888;line-height:1.5">${text}</span></div>`).join('')}
+        </div>
+      </div>`)}
+
+    ${section('Kebijakan','Aturan Platform',`
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${[['📜','Kebijakan Privasi','Data pribadi disimpan enkripsi AES-256. Kami tidak menjual data ke pihak ketiga. NIK dan identitas seller hanya diakses admin terverifikasi.'],['🛒','Kebijakan Transaksi','Order yang tidak dikonfirmasi dalam 30 menit otomatis dibatalkan dan saldo dikembalikan. Semua transaksi tercatat dan dapat diaudit.'],['🏪','Kebijakan Seller','Seller wajib merespons order dalam 24 jam. Penipuan = blokir permanen. Data identitas dapat diserahkan ke pihak berwenang jika ada pelanggaran hukum.'],['💰','Kebijakan Refund','Pembatalan oleh seller otomatis mengembalikan saldo pembeli. Komplain diajukan dalam 24 jam setelah konfirmasi.'],['🔞','Konten Terlarang','Dilarang menjual produk ilegal, bajakan, obat-obatan terlarang, senjata, atau konten dewasa. Pelanggaran ditindak tegas.']].map(([icon,title,desc])=>`
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:18px 20px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-size:16px">${icon}</span><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#fff">${title}</div></div>
+            <p style="font-size:12px;color:#666;line-height:1.7;margin:0">${desc}</p>
+          </div>`).join('')}
+      </div>`)}
+
+    <div style="background:linear-gradient(135deg,rgba(245,166,35,.08),rgba(245,166,35,.02));border:1px solid rgba(245,166,35,.2);border-radius:20px;padding:24px;text-align:center">
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff;margin-bottom:6px">Butuh Bantuan?</div>
+      <p style="font-size:13px;color:#666;margin-bottom:16px">Tim admin siap membantu kamu</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <div style="background:#111;border:1px solid var(--border);border-radius:12px;padding:10px 16px;font-size:12px;color:#888">📧 xrezzkystore.idn@gmail.com</div>
+        <div style="background:#111;border:1px solid var(--border);border-radius:12px;padding:10px 16px;font-size:12px;color:#888">🕐 Senin–Sabtu, 08.00–22.00 WIB</div>
+      </div>
+    </div>
+  </div>`
 }
 
 // ── REALTIME CART ─────────────────────────────────────────
