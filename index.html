@@ -124,6 +124,7 @@ img{display:block;max-width:100%}
 #toast.ok{background:var(--bg2);border:1px solid rgba(245,166,35,.3);color:#fff}
 #toast.err{background:#100000;border:1px solid rgba(239,68,68,.4);color:#f87171}
 #toast.info{background:#001020;border:1px solid rgba(59,130,246,.3);color:#60a5fa}
+#toast.info{background:#001020;border:1px solid rgba(59,130,246,.3);color:#60a5fa}
 
 /* ── MODAL ── */
 .modal-ov{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -854,7 +855,7 @@ function go(page, params={}) {
   switch(page) {
     case 'home':    pgHome(); break
     case 'search':  pgSearch(params); break
-    case 'product': pgProduct(params.id); break
+    case 'product': if(params?.id) pgProduct(params.id); else go('home'); break
     case 'cart':    pgCart(); break
     case 'tx':      pgTx(); break
     case 'auth':    pgAuth(params); break
@@ -1069,6 +1070,7 @@ async function pgProduct(id) {
 
   const imgs=[...(p.product_images||[])].sort((a,b)=>a.sort_order-b.sort_order)
   _pdQty=1; _pdStock=p.stock
+  ST.lbImgs=imgs.map(i=>i.image_url) // Set early so switchImg works before lightbox
 
   const {data:revs}=await sb.from('reviews').select('id,rating,comment,created_at,user:users!user_id(username,avatar_url)').eq('product_id',id).order('created_at',{ascending:false})
   const reviews=revs||[]
@@ -1083,7 +1085,7 @@ async function pgProduct(id) {
     </div>
     <div class="pd-grid">
       <div>
-        <div class="pd-img" id="pd-main" onclick="lbOpen(${JSON.stringify(imgs.map(i=>i.image_url))},${0})">
+        <div class="pd-img" id="pd-main" onclick="lbOpen(${JSON.stringify(imgs.map(i=>i.image_url))}, 0)">
           ${imgs[0]?`<img id="pd-img" src="${esc(imgs[0].image_url)}" alt="${esc(p.name)}"/>`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${NO_IMG}</div>`}
           ${imgs.length>1?`<div class="pd-img-count">${1}/${imgs.length}</div>`:''}
         </div>
@@ -1169,10 +1171,11 @@ function stars(n) {
 
 function switchImg(i) {
   const img=q('pd-img'), cnt=q('pd-main')?.querySelector('.pd-img-count')
-  if(img && ST.lbImgs[i]) img.src=ST.lbImgs[i]
+  if(!ST.lbImgs || !ST.lbImgs.length) return
+  ST.lbIdx=i
+  if(img) img.src=ST.lbImgs[i]
   document.querySelectorAll('.pd-thumb').forEach((t,j)=>t.classList.toggle('on',j===i))
   if(cnt) cnt.textContent=`${i+1}/${ST.lbImgs.length}`
-  ST.lbIdx=i
 }
 
 function chgQty(d) {
@@ -1562,11 +1565,20 @@ function authRenderForgot() {
 
 function authTogglePass() {
   _showPass=!_showPass
-  document.querySelectorAll('#aform input[type="password"],#aform input[type="text"]').forEach(inp=>{
+  document.querySelectorAll('#aform input').forEach(inp=>{
     if(inp.id==='a-email'||inp.id==='a-user') return
-    inp.type=_showPass?'text':'password'
+    if(inp.type==='password'||inp.type==='text') inp.type=_showPass?'text':'password'
   })
-  document.querySelectorAll('.eye-btn').forEach(b=>{ b.outerHTML=EYE() })
+  // Re-render eye buttons safely
+  document.querySelectorAll('.eye-btn').forEach(b=>{
+    const newEl=document.createElement('div')
+    newEl.className='eye-btn'
+    newEl.setAttribute('onclick','authTogglePass()')
+    newEl.innerHTML=_showPass
+      ? '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+      : '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+    b.parentNode.replaceChild(newEl, b)
+  })
 }
 
 function authStrength() {
@@ -1765,7 +1777,7 @@ async function pgDeposit() {
         <label>Jumlah</label>
         <div style="position:relative">
           <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;font-weight:600;pointer-events:none">Rp</span>
-          <input id="dep-amt" type="text" class="fi" placeholder="0" style="padding-left:36px" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
+          <input id="dep-amt" type="text" class="fi" placeholder="0" style="padding-left:36px" oninput="this.value=this.value.replace(/[^0-9]/g,'')" inputmode="numeric"/>
         </div>
         <div class="preset-wrap">
           ${[10000,25000,50000,100000,250000,500000].map(n=>`<button class="preset-btn" onclick="q('dep-amt').value='${n}'">${rp(n)}</button>`).join('')}
@@ -1899,7 +1911,7 @@ function sellerStep(step) {
       ${SF('','Nama Toko *',SI('s-nm','text','Contoh: Toko Elektronik Jaya',SD.shop_name||'','maxlength="60"'),'Tidak bisa diubah setelah disetujui admin')}
       ${SF('','Deskripsi Toko *',`<textarea id="s-ds" class="fi" rows="3" maxlength="300" placeholder="Ceritakan produk dan keunggulan toko kamu...">${esc(SD.shop_desc||'')}</textarea>`)}
       ${SF('','Kategori Utama *',SS('s-ct',`<option value="">Pilih kategori...</option>${['Elektronik','Fashion & Pakaian','Makanan & Minuman','Kesehatan & Kecantikan','Hobi & Koleksi','Olahraga','Otomotif','Buku & Alat Tulis','Rumah & Taman','Lainnya'].map(c=>`<option value="${c}" ${SD.cat===c?'selected':''}>${c}</option>`).join('')}`))}
-      ${SF('','No. WhatsApp *',`<div style="position:relative"><span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;font-weight:600;pointer-events:none">+62</span><input id="s-wa" type="tel" class="fi" placeholder="8123456789" value="${esc(SD.wa||'')}" style="padding-left:44px" maxlength="13" onkeypress="return /[0-9]/.test(event.key)"/></div>`,'Tidak dipublikasikan ke pembeli')}
+      ${SF('','No. WhatsApp *',`<div style="position:relative"><span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;font-weight:600;pointer-events:none">+62</span><input id="s-wa" type="tel" class="fi" inputmode="numeric" placeholder="8123456789" value="${esc(SD.wa||'')}" style="padding-left:44px" maxlength="13" onkeypress="return /[0-9]/.test(event.key)"/></div>`,'Tidak dipublikasikan ke pembeli')}
     </div>
     <button class="btn btn-gold btn-full" onclick="sellerNext(0)">Lanjut: Data Identitas →</button>`
 
@@ -1934,7 +1946,7 @@ function sellerStep(step) {
       ${SF('','Kabupaten / Kota *',SS('s-kb',`<option value="">Pilih Kab/Kota...</option>${SD.prov?getKab(SD.prov).map(k=>`<option value="${k}" ${SD.kab===k?'selected':''}>${k}</option>`).join(''):''}`,'chgKab(this.value)'))}
       ${SF('','Kecamatan *',SS('s-kc',`<option value="">Pilih Kecamatan...</option>${SD.kab?getKec(SD.kab).map(k=>`<option value="${k}" ${SD.kec===k?'selected':''}>${k}</option>`).join(''):''}`))}
       ${SF('','Kelurahan / Desa *',SI('s-kel','text','Nama kelurahan/desa',SD.kel||''))}
-      ${SF('','Kode Pos *',`<input id="s-kp" type="text" class="fi" placeholder="Contoh: 16912" value="${esc(SD.kodepos||'')}" maxlength="5" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>`)}
+      ${SF('','Kode Pos *',`<input id="s-kp" type="text" class="fi" placeholder="Contoh: 16912" inputmode="numeric" value="${esc(SD.kodepos||'')}" maxlength="5" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>`)}
       ${SF('','Alamat Lengkap *',`<textarea id="s-al" class="fi" rows="3" maxlength="300" placeholder="Jl. Nama Jalan No. XX, RT/RW...">${esc(SD.alamat||'')}</textarea>`)}
     </div>
     <div style="display:flex;gap:10px">${back(1)}<button class="btn btn-gold" onclick="sellerNext(2)" style="flex:2">Lanjut: Verifikasi →</button></div>`
@@ -2039,7 +2051,7 @@ function sellerNext(step) {
     if(!kel) return sellerErr('Kelurahan/desa wajib diisi.')
     if(!kp||kp.length!==5) return sellerErr('Kode pos harus 5 digit.')
     if(!al||al.length<10) return sellerErr('Alamat lengkap wajib diisi.')
-    Object.assign(SD,{prov:pr,kab:kb,kec,kel,kodepos:kp,alamat:al})
+    Object.assign(SD,{prov:pr,kab:kb,kec:kc,kel,kodepos:kp,alamat:al})
     sellerStep(3)
   }
 }
@@ -2195,9 +2207,9 @@ window.addEventListener('unhandledrejection', e=>{
 })()
 
 function startCartRT() {
-  if(window._cartCh) sb.removeChannel(window._cartCh)
+  if(window._cartCh) { try{sb.removeChannel(window._cartCh)}catch(e){} }
   if(!ST.user) return
-  window._cartCh=sb.channel('cart-rt')
+  window._cartCh=sb.channel(`cart-rt-${ST.user.id}`)
     .on('postgres_changes',{event:'*',schema:'public',table:'carts',filter:`user_id=eq.${ST.user.id}`},async()=>await refreshCartCount())
     .subscribe()
 }
