@@ -879,7 +879,7 @@ async function addCart(productId, btn) {
   const orig=btn.innerHTML
   btn.innerHTML=`<div class="spin"></div>`; btn.disabled=true
   const {error}=await sb.from('carts').upsert({user_id:ST.user.id,product_id:productId,quantity:1},{onConflict:'user_id,product_id'})
-  if(error) toast('Gagal menambahkan.','err')
+  if(error) toast('Gagal menambahkan: '+error.message,'err')
   else { toast('Ditambahkan ke keranjang! 🛒'); await refreshCartCount() }
   btn.innerHTML=orig; btn.disabled=false
 }
@@ -944,14 +944,14 @@ async function pgHome() {
     </div>`
 
   // announcements
-  const {data:anns}=await sb.from('announcements').select('id,title,is_important').order('is_important',{ascending:false}).limit(3)
-  const imp=(anns||[]).find(a=>a.is_important)
+  let anns=[]
+  try { const {data}=await sb.from('announcements').select('id,title,is_important').order('is_important',{ascending:false}).limit(3); anns=data||[] } catch(e) { console.warn('announcements:',e.message) }
+  const imp=anns.find(a=>a.is_important)
   if(imp) q('ann-area').innerHTML=`<div class="ann"><div class="wrap"><div class="ann-in"><div class="ann-t"><span class="ann-badge">📢 Penting</span>${esc(imp.title)}</div></div></div></div>`
 
   // categories
   if(!ST.categories.length) {
-    const {data:cats}=await sb.from('categories').select('id,name').order('name')
-    ST.categories=cats||[]
+    try{const {data}=await sb.from('categories').select('id,name').order('name');ST.categories=data||[]}catch(e){ST.categories=[]}
   }
   const catEl=q('home-cats')
   if(catEl) ST.categories.forEach(c=>{ catEl.innerHTML+=`<div class="chip" onclick="homeCat('${c.id}',this)">${esc(c.name)}</div>` })
@@ -968,8 +968,14 @@ async function homeCat(catId, btn) {
   grid.innerHTML=skelGrid(8)
   let dbq=sb.from('products').select('id,name,price,stock,created_at,product_images(image_url,sort_order),seller:users!seller_id(id,username),category:categories!category_id(id,name)').eq('is_active',true).order('created_at',{ascending:false}).limit(20)
   if(catId!=='all') dbq=dbq.eq('category_id',catId)
-  const {data}=await dbq
-  grid.innerHTML=productGrid(data||[], 'Belum ada produk')
+  try {
+    const {data,error}=await dbq
+    if(error) throw error
+    grid.innerHTML=productGrid(data||[], 'Belum ada produk')
+  } catch(e) {
+    console.error('homeCat:',e)
+    grid.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><h3>Gagal memuat produk</h3><p>${esc(e.message)}</p><button class="btn btn-gold btn-sm" onclick="homeCat('all',document.querySelector('#home-cats .chip'))">Coba Lagi</button></div>`
+  }
 }
 
 // ── PAGE: SEARCH ──────────────────────────────────────────
@@ -1014,8 +1020,7 @@ async function pgSearch(params={}) {
     </div>`
 
   if(!ST.categories.length) {
-    const {data:cats}=await sb.from('categories').select('id,name').order('name')
-    ST.categories=cats||[]
+    try{const {data}=await sb.from('categories').select('id,name').order('name');ST.categories=data||[]}catch(e){ST.categories=[]}
   }
   const catEl=q('srch-cats')
   if(catEl) ST.categories.forEach(c=>{ catEl.innerHTML+=`<div class="chip" onclick="srchCat('${c.id}',this)">${esc(c.name)}</div>` })
@@ -1049,8 +1054,16 @@ async function doSearch() {
   dbq = sort==='price_asc' ? dbq.order('price',{ascending:true}) :
         sort==='price_desc' ? dbq.order('price',{ascending:false}) :
         dbq.order('created_at',{ascending:sort==='oldest'})
-  const {data}=await dbq.limit(40)
-  const list=data||[]
+  let list=[]
+  try {
+    const {data,error}=await dbq.limit(40)
+    if(error) throw error
+    list=data||[]
+  } catch(e) {
+    console.error('doSearch:',e)
+    list=[]
+    toast('Gagal mencari: '+e.message,'err')
+  }
 
   if(info) info.textContent=`${list.length} produk${qv?` untuk "${qv}"`:''}${_srchCat?' (filter aktif)':''}`
   if(resetBtn) resetBtn.style.display=(qv||_srchCat)?'inline':'none'
@@ -1065,15 +1078,20 @@ async function pgProduct(id) {
   const el=q('pg-product')
   el.innerHTML=`<div class="wrap" style="padding:20px 0 60px">${skelProduct()}</div>`
 
-  const {data:p}=await sb.from('products').select('id,name,price,stock,description,is_active,seller:users!seller_id(id,username,avatar_url),category:categories!category_id(id,name),product_images(id,image_url,sort_order)').eq('id',id).single()
+  let p=null
+  try {
+    const {data,error}=await sb.from('products').select('id,name,price,stock,description,is_active,seller:users!seller_id(id,username,avatar_url),category:categories!category_id(id,name),product_images(id,image_url,sort_order)').eq('id',id).single()
+    if(error) throw error
+    p=data
+  } catch(e) { console.error('pgProduct:',e); go('home'); toast('Produk tidak ditemukan.','err'); return }
   if(!p) { go('home'); return }
 
   const imgs=[...(p.product_images||[])].sort((a,b)=>a.sort_order-b.sort_order)
   _pdQty=1; _pdStock=p.stock
   ST.lbImgs=imgs.map(i=>i.image_url) // Set early so switchImg works before lightbox
 
-  const {data:revs}=await sb.from('reviews').select('id,rating,comment,created_at,user:users!user_id(username,avatar_url)').eq('product_id',id).order('created_at',{ascending:false})
-  const reviews=revs||[]
+  let reviews=[]
+  try{const {data}=await sb.from('reviews').select('id,rating,comment,created_at,user:users!user_id(username,avatar_url)').eq('product_id',id).order('created_at',{ascending:false});reviews=data||[]}catch(e){console.warn('reviews:',e)}
   const avg=reviews.length?(reviews.reduce((a,r)=>a+r.rating,0)/reviews.length).toFixed(1):null
   const oos=p.stock===0
 
@@ -1198,9 +1216,11 @@ async function pdBuy(id) {
   if(!ST.user){go('auth',{tab:'login'});return}
   const btn=q('pd-buy'); if(!btn) return
   btn.innerHTML=`<div class="spin"></div>`; btn.disabled=true
-  const {data,error}=await sb.rpc('create_order',{p_user_id:ST.user.id,p_items:[{product_id:id,quantity:_pdQty}]})
-  if(error){ toast(error.message||'Gagal.','err'); btn.innerHTML='Beli Sekarang'; btn.disabled=false }
-  else { toast('Order dibuat! 🎉'); go('tx') }
+  try{
+    const {data,error}=await sb.rpc('create_order',{p_user_id:ST.user.id,p_items:[{product_id:id,quantity:_pdQty}]})
+    if(error) throw error
+    toast('Order dibuat! 🎉'); go('tx')
+  }catch(e){ toast(e.message||'Gagal membuat order.','err'); if(btn){btn.innerHTML='Beli Sekarang';btn.disabled=false} }
 }
 
 // ── PAGE: CART ────────────────────────────────────────────
@@ -1220,9 +1240,16 @@ async function pgCart() {
 }
 
 async function fetchCart() {
-  const {data}=await sb.from('carts').select('id,quantity,product:products!product_id(id,name,price,stock,is_active,product_images(image_url,sort_order),seller:users!seller_id(id,username))').eq('user_id',ST.user.id).order('created_at',{ascending:false})
-  _cartItems=(data||[]).filter(i=>i.product?.is_active)
-  _cartSel=_cartItems.map(i=>i.product.id)
+  try {
+    const {data,error}=await sb.from('carts').select('id,quantity,product:products!product_id(id,name,price,stock,is_active,product_images(image_url,sort_order),seller:users!seller_id(id,username))').eq('user_id',ST.user.id).order('created_at',{ascending:false})
+    if(error) throw error
+    _cartItems=(data||[]).filter(i=>i.product?.is_active)
+    _cartSel=_cartItems.map(i=>i.product.id)
+  } catch(e) {
+    console.error('fetchCart:',e)
+    _cartItems=[]; _cartSel=[]
+    toast('Gagal memuat keranjang: '+e.message,'err')
+  }
   renderCart(); renderCartSum()
 }
 
@@ -1313,9 +1340,11 @@ async function cartCheckout() {
   if(oos){toast(`Stok "${oos.product.name}" tidak cukup.`,'err');return}
   const btn=q('checkout-btn')
   if(btn){btn.innerHTML=`<div class="spin"></div>`;btn.disabled=true}
-  const {error}=await sb.rpc('create_order',{p_user_id:ST.user.id,p_items:sel.map(i=>({product_id:i.product.id,quantity:i.quantity}))})
-  if(error){toast(error.message||'Gagal checkout.','err');if(btn){btn.innerHTML=`Checkout (${_cartSel.length})`;btn.disabled=false};return}
-  await sb.from('carts').delete().in('id',sel.map(i=>i.id))
+  let coError=null
+  try{const {error}=await sb.rpc('create_order',{p_user_id:ST.user.id,p_items:sel.map(i=>({product_id:i.product.id,quantity:i.quantity}))});coError=error}catch(e){coError=e}
+  if(coError){toast(coError.message||'Gagal checkout.','err');if(btn){btn.innerHTML=`Checkout (${_cartSel.length})`;btn.disabled=false};return}
+  try{await sb.from('carts').delete().in('id',sel.map(i=>i.id))}catch(e){}
+  _cartItems=[]; _cartSel=[]; ST.cartCount=0; updateCartBadge()
   toast('Order berhasil dibuat! 🎉')
   setTimeout(()=>go('tx'),1200)
 }
@@ -1345,8 +1374,16 @@ async function pgTx() {
     </div>
     <div id="tx-list"><div style="text-align:center;padding:40px;color:var(--muted)">Memuat...</div></div>
   </div>`
-  const {data}=await sb.from('orders').select('id,status,total_price,expires_at,paid_at,created_at,order_items(id,quantity,price,product:products!product_id(id,name,product_images(image_url,sort_order)))').eq('user_id',ST.user.id).order('created_at',{ascending:false})
-  _txOrders=data||[]; _txFilter='all'
+  try {
+    const {data,error}=await sb.from('orders').select('id,status,total_price,expires_at,paid_at,created_at,order_items(id,quantity,price,product:products!product_id(id,name,product_images(image_url,sort_order)))').eq('user_id',ST.user.id).order('created_at',{ascending:false})
+    if(error) throw error
+    _txOrders=data||[]
+  } catch(e) {
+    console.error('pgTx error:',e)
+    _txOrders=[]
+    toast('Gagal memuat transaksi: '+e.message,'err')
+  }
+  _txFilter='all'
   txRender()
   injectFooter('tx')
 }
@@ -1426,12 +1463,13 @@ async function txCopy(id) {
 async function txConfirm(orderId) {
   const btn=q(`conf-${orderId}`)
   if(btn){btn.innerHTML=`<div class="spin spin-w"></div>`;btn.disabled=true}
-  const {error}=await sb.rpc('confirm_order',{p_order_id:orderId})
-  if(error){toast(error.message||'Gagal.','err');if(btn){btn.innerHTML='✓ Konfirmasi';btn.disabled=false};return}
+  let tcError=null
+  try{const {error}=await sb.rpc('confirm_order',{p_order_id:orderId});tcError=error}catch(e){tcError=e}
+  if(tcError){toast(tcError.message||'Gagal konfirmasi.','err');if(btn){btn.innerHTML='✓ Konfirmasi';btn.disabled=false};return}
   const o=_txOrders.find(x=>x.id===orderId)
   if(o){o.status='paid';o.paid_at=new Date().toISOString()}
   txRender(); toast('Pembayaran dikonfirmasi! 🎉')
-  if(ST.user) { const {data:{session}}=await sb.auth.getSession(); if(session?.user) await loadProfile(session.user); updateNav() }
+  if(ST.user) { try{ const {data:{session}}=await sb.auth.getSession(); if(session?.user){await loadProfile(session.user);updateNav()} }catch(e){} }
 }
 
 function txDetail(orderId) {
@@ -1662,7 +1700,8 @@ async function authSubmitForgot() {
 async function pgProfile() {
   if(!ST.user){go('auth',{tab:'login',redirect:'profile'});return}
   const u=ST.user
-  const {data:existApp}=await sb.from('seller_applications').select('id,status').eq('user_id',u.id).maybeSingle()
+  let existApp=null
+  try { const {data}=await sb.from('seller_applications').select('id,status').eq('user_id',u.id).maybeSingle(); existApp=data } catch(e) { console.warn('seller_applications table not found:',e.message) }
   const isSeller=u.role==='seller'||u.role==='admin'
   const isPend=existApp?.status==='pending'
 
@@ -1799,8 +1838,9 @@ async function pgDeposit() {
 }
 
 async function depLoadHist() {
-  const {data}=await sb.from('deposits').select('*').eq('user_id',ST.user.id).order('created_at',{ascending:false}).limit(10)
-  const hist=data||[], el=q('dep-hist'); if(!hist.length||!el) return
+  let data=[]
+  try { const res=await sb.from('deposits').select('*').eq('user_id',ST.user.id).order('created_at',{ascending:false}).limit(10); data=res.data||[] } catch(e) { console.warn('deposits:',e.message); return }
+  const hist=data, el=q('dep-hist'); if(!hist.length||!el) return
   const sColor={pending:'var(--yellow)',approved:'var(--green)',rejected:'var(--red)'}
   el.innerHTML=`<div class="card card-p" style="margin-top:14px">
     <div class="brand" style="font-size:15px;font-weight:700;margin-bottom:14px">Riwayat Deposit</div>
@@ -1821,7 +1861,8 @@ async function depSubmit() {
   if(!amount||amount<10000){if(errEl)errEl.innerHTML=`<div class="err-box"><p>Minimal deposit Rp 10.000</p></div>`;return}
   const method=q('dep-method')?.value||'Transfer Bank'
   const btn=q('dep-btn'); if(btn){btn.innerHTML=`<div class="spin"></div>`;btn.disabled=true}
-  const {error}=await sb.from('deposits').insert({user_id:ST.user.id,amount,method,status:'pending'})
+  let error=null
+  try { const res=await sb.from('deposits').insert({user_id:ST.user.id,amount,method,status:'pending'}); error=res.error } catch(e) { error=e }
   if(error){if(errEl)errEl.innerHTML=`<div class="err-box"><p>${esc(error.message)}</p></div>`}
   else {
     if(okEl)okEl.innerHTML=`<div class="ok-box"><p>Request deposit dikirim! Tunggu konfirmasi admin.</p></div>`
@@ -1846,7 +1887,8 @@ async function pgSeller() {
   if(!ST.user){go('auth',{tab:'login',redirect:'seller'});return}
   const u=ST.user
   if(u.role==='seller'||u.role==='admin'){go('profile');toast('Kamu sudah menjadi seller!');return}
-  const {data:ex}=await sb.from('seller_applications').select('id,status').eq('user_id',u.id).maybeSingle()
+  let ex=null
+  try { const {data}=await sb.from('seller_applications').select('id,status').eq('user_id',u.id).maybeSingle(); ex=data } catch(e) { console.warn('seller_applications:',e.message) }
   if(ex?.status==='pending'){go('profile');toast('Pendaftaran sedang diproses admin.');return}
 
   const el=q('pg-seller')
@@ -2071,8 +2113,9 @@ async function sellerSendOTP() {
   const btn=q('send-otp-btn'); if(btn){btn.innerHTML=`<div class="spin"></div>`;btn.disabled=true}
   const otp=String(Math.floor(100000+Math.random()*900000))
   const exp=new Date(Date.now()+10*60*1000).toISOString()
-  const {error}=await sb.from('seller_otps').upsert({user_id:ST.user.id,otp_code:otp,expires_at:exp},{onConflict:'user_id'})
-  if(error){toast('Gagal kirim OTP: '+error.message,'err');if(btn){btn.innerHTML='Kirim Kode Verifikasi ke Email';btn.disabled=false};return}
+  let sendError=null
+  try{const {error}=await sb.from('seller_otps').upsert({user_id:ST.user.id,otp_code:otp,expires_at:exp},{onConflict:'user_id'});sendError=error}catch(e){sendError=e}
+  if(sendError){toast('Gagal: '+sendError.message+' — Pastikan tabel seller_otps dibuat di Supabase.','err');if(btn){btn.innerHTML='Kirim Kode Verifikasi ke Email';btn.disabled=false};return}
   console.warn('🔑 DEV OTP (hapus di produksi):', otp) // HAPUS DI PRODUKSI
   toast(`Kode OTP dikirim ke ${ST.user.email}`)
   const send=q('otp-send'), inp=q('otp-input')
@@ -2090,22 +2133,24 @@ async function sellerVerify() {
   const code=Array.from({length:6}).map((_,i)=>q(`otp${i}`)?.value||'').join('')
   if(code.length!==6){toast('Masukkan 6 digit kode OTP.','err');return}
   const btn=q('verify-btn'); if(btn){btn.innerHTML=`<div class="spin"></div>`;btn.disabled=true}
-  const {data:od}=await sb.from('seller_otps').select('otp_code,expires_at').eq('user_id',ST.user.id).single()
-  if(!od){toast('Kode tidak valid.','err');if(btn){btn.innerHTML='Verifikasi & Daftar Seller ✦';btn.disabled=false};return}
+  let od=null
+  try{const {data,error}=await sb.from('seller_otps').select('otp_code,expires_at').eq('user_id',ST.user.id).single();if(!error)od=data}catch(e){}
+  if(!od){toast('Kode tidak valid atau kadaluarsa. Kirim ulang kode.','err');if(btn){btn.innerHTML='Verifikasi & Daftar Seller ✦';btn.disabled=false};return}
   if(od.otp_code!==code){
     Array.from({length:6}).forEach((_,i)=>{const el=q(`otp${i}`);if(el)el.style.borderColor='var(--red)'})
     toast('Kode OTP salah.','err');if(btn){btn.innerHTML='Verifikasi & Daftar Seller ✦';btn.disabled=false};return
   }
   if(new Date(od.expires_at)<new Date()){toast('Kode kadaluarsa.','err');if(btn){btn.innerHTML='Verifikasi & Daftar Seller ✦';btn.disabled=false};return}
 
-  const {error}=await sb.from('seller_applications').insert({
+  let appError=null
+  try{const {error}=await sb.from('seller_applications').insert({
     user_id:ST.user.id, email:ST.user.email,
     shop_name:SD.shop_name, shop_description:SD.shop_desc, shop_category:SD.cat, shop_whatsapp:'+62'+SD.wa,
     full_name:SD.fullname, nik:SD.nik, date_of_birth:SD.dob, gender:SD.gender, ktp_url:SD.ktp_url, bank_account:SD.bank,
     pulau:SD.pulau, provinsi:SD.prov, kab_kota:SD.kab, kecamatan:SD.kec, kelurahan:SD.kel, kode_pos:SD.kodepos, alamat_lengkap:SD.alamat,
     status:'pending'
-  })
-  if(error){toast('Gagal submit: '+error.message,'err');if(btn){btn.innerHTML='Verifikasi & Daftar Seller ✦';btn.disabled=false};return}
+  });appError=error}catch(e){appError=e}
+  if(appError){toast('Gagal submit: '+appError.message,'err');if(btn){btn.innerHTML='Verifikasi & Daftar Seller ✦';btn.disabled=false};return}
   await sb.from('seller_otps').delete().eq('user_id',ST.user.id)
   clearInterval(window._otpCd)
   updateSteps(4)
