@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CS Dashboard — XREZZKY</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{--bg:#06080f;--bg2:#0b0f1c;--s1:#0f1523;--s2:#161d2e;--s3:#1c2540;--bd:rgba(255,255,255,.07);--bd2:rgba(255,255,255,.13);--tx:#e2e8f0;--mu:#475569;--green:#22c55e;--blue:#3b82f6;--violet:#8b5cf6;--red:#ef4444;--amber:#f59e0b}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--tx);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+.syne{font-family:'Syne',sans-serif}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:36px;height:36px;border:3px solid rgba(139,92,246,.2);border-top-color:#8b5cf6;border-radius:50%;animation:spin .7s linear infinite;margin-bottom:14px}
+
+/* LOCK SCREEN */
+#lockScreen{position:fixed;inset:0;background:var(--bg);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+#lockScreen.hide{display:none!important}
+
+/* LAYOUT — WA style 3 panel */
+#app{display:flex;height:100vh;overflow:hidden}
+
+/* LEFT: chat list */
+#panelLeft{width:320px;flex-shrink:0;display:flex;flex-direction:column;background:var(--bg2);border-right:1px solid var(--bd)}
+@media(max-width:768px){#panelLeft{width:100%;position:absolute;z-index:100;height:100%;transform:translateX(0);transition:.3s}#panelLeft.hidden-mobile{transform:translateX(-100%)}}
+
+/* CENTER: chat window */
+#panelCenter{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--s1)}
+
+/* RIGHT: user info (optional) */
+#panelRight{width:280px;flex-shrink:0;display:flex;flex-direction:column;background:var(--bg2);border-left:1px solid var(--bd);transition:.3s}
+#panelRight.closed{width:0;overflow:hidden;border:none}
+@media(max-width:1100px){#panelRight{display:none}}
+
+/* HEADER */
+.panel-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bd);flex-shrink:0;min-height:56px}
+
+/* CHAT ITEM */
+.chat-item{display:flex;align-items:center;gap:11px;padding:12px 16px;cursor:pointer;transition:background .15s;position:relative;border-bottom:1px solid rgba(255,255,255,.04)}
+.chat-item:hover{background:rgba(255,255,255,.04)}
+.chat-item.active{background:rgba(139,92,246,.1);border-left:3px solid var(--violet)}
+.chat-item .av{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;background:linear-gradient(135deg,#8b5cf6,#3b82f6)}
+.chat-item .unread-dot{position:absolute;top:12px;right:14px;width:18px;height:18px;background:var(--violet);border-radius:50%;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;color:white}
+
+/* STATUS BADGE */
+.st-badge{font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;display:inline-flex;align-items:center;gap:3px}
+.st-open{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
+.st-pending{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+.st-closed{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
+.st-escalated{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3)}
+
+/* CHAT MESSAGES */
+#msgArea{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:2px;scroll-behavior:smooth}
+#msgArea::-webkit-scrollbar{width:4px}
+#msgArea::-webkit-scrollbar-thumb{background:rgba(139,92,246,.3);border-radius:4px}
+
+/* BUBBLES — WA style */
+.msg-row{display:flex;align-items:flex-end;gap:6px;margin-bottom:2px}
+.msg-row.me{flex-direction:row-reverse}
+.msg-row.them{flex-direction:row}
+.bubble{max-width:68%;padding:8px 12px;border-radius:18px;position:relative;word-break:break-word}
+.bubble.me{background:linear-gradient(135deg,rgba(139,92,246,.4),rgba(59,130,246,.3));border:1px solid rgba(139,92,246,.4);border-radius:18px 18px 4px 18px}
+.bubble.them{background:var(--s2);border:1px solid var(--bd);border-radius:18px 18px 18px 4px}
+.bubble.sys{background:rgba(255,255,255,.04);border:none;text-align:center;font-size:10px;color:var(--mu);padding:4px 14px;border-radius:20px;align-self:center;max-width:85%;white-space:pre-line}
+.msg-meta{font-size:9px;margin-top:3px;display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.msg-meta.them{justify-content:flex-start}
+
+/* STATUS TICKS — WA style */
+.tick{font-size:10px;color:var(--mu)}
+.tick.sent{color:var(--mu)}
+.tick.delivered{color:#94a3b8}
+.tick.read{color:#60a5fa}
+
+/* TYPING INDICATOR */
+#typingIndicator{padding:6px 16px;font-size:11px;color:var(--mu);min-height:22px;flex-shrink:0}
+.typing-dots span{display:inline-block;width:4px;height:4px;background:var(--violet);border-radius:50%;animation:bounce .8s infinite;margin:0 1px}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+/* INPUT */
+#inputArea{padding:10px 14px;border-top:1px solid var(--bd);display:flex;align-items:flex-end;gap:10px;flex-shrink:0;background:var(--bg2)}
+#msgInput{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:22px;padding:10px 16px;color:var(--tx);font-family:inherit;font-size:13px;resize:none;outline:none;max-height:120px;min-height:42px;transition:border-color .15s;line-height:1.5}
+#msgInput:focus{border-color:rgba(139,92,246,.6)}
+#msgInput::placeholder{color:var(--mu)}
+.send-btn{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--blue));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;box-shadow:0 4px 12px rgba(139,92,246,.3)}
+.send-btn:hover{opacity:.9;transform:scale(1.05)}
+
+/* ONLINE STATUS DOT */
+.online-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.online-dot.on{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.6)}
+.online-dot.off{background:#64748b}
+
+/* TOAST */
+#toast{position:fixed;top:16px;right:16px;z-index:9999;transform:translateX(200%);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.ti{background:var(--s2);border:1px solid var(--bd2);border-left:4px solid var(--violet);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+
+/* MISC */
+.inp{width:100%;background:var(--s2);border:1px solid var(--bd);padding:10px 14px;border-radius:10px;color:var(--tx);font-family:inherit;font-size:13px;outline:none;transition:border-color .15s}
+.inp:focus{border-color:rgba(139,92,246,.6)}
+.inp::placeholder{color:var(--mu)}
+.btn-p{background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;padding:9px 20px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:inherit;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.btn-p:hover{opacity:.9}
+.btn-p:disabled{opacity:.4;cursor:not-allowed}
+.btn-g{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3);padding:7px 14px;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;transition:.15s;display:inline-flex;align-items:center;gap:5px}
+.btn-g:hover{background:rgba(34,197,94,.25)}
+.btn-r{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.3);padding:7px 14px;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;transition:.15s;display:inline-flex;align-items:center;gap:5px}
+.btn-r:hover{background:rgba(239,68,68,.22)}
+.btn-y{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.3);padding:7px 14px;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;transition:.15s;display:inline-flex;align-items:center;gap:5px}
+.btn-y:hover{background:rgba(245,158,11,.22)}
+.btn-n{background:rgba(255,255,255,.05);color:var(--mu);border:1px solid var(--bd);padding:9px 18px;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn-n:hover{background:rgba(255,255,255,.1);color:var(--tx)}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(12px);z-index:500;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-bg.on{display:flex}
+.modal-box{background:var(--bg2);border:1px solid var(--bd2);border-radius:20px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;animation:su .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes su{from{transform:translateY(36px) scale(.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+
+/* SCROLLBAR */
+.ns{scrollbar-width:none}.ns::-webkit-scrollbar{display:none}
+.cs{scrollbar-width:thin}.cs::-webkit-scrollbar-thumb{background:rgba(139,92,246,.35);border-radius:3px}
+</style>
+</head>
+<body>
+<!-- LOADER -->
+<div id="loader">
+  <div class="spinner"></div>
+  <p class="text-sm font-black syne" style="background:linear-gradient(135deg,#c4b5fd,#93c5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent">CS DASHBOARD</p>
+  <p class="text-xs text-slate-600 mt-1">Memverifikasi akses...</p>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><div class="ti"><div id="ti" class="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style="background:rgba(139,92,246,.2)"><i class="fas fa-check text-xs text-violet-400"></i></div><div><p class="font-bold text-sm" id="tt">-</p><p class="text-xs text-slate-500" id="tm">-</p></div></div></div>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="w-14 h-14 rounded-2xl mb-4 flex items-center justify-center" style="background:linear-gradient(135deg,#8b5cf6,#3b82f6);box-shadow:0 0 30px rgba(139,92,246,.4)"><i class="fas fa-headset text-white text-xl"></i></div>
+  <h2 class="text-2xl font-black syne mb-1" style="background:linear-gradient(135deg,#c4b5fd,#93c5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent">CS DASHBOARD</h2>
+  <p class="text-slate-500 text-sm mb-6">Masuk sebagai Customer Service</p>
+  <div class="w-full max-w-xs">
+    <div class="mb-3"><input type="email" id="csEmail" class="inp" placeholder="Email CS" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="mb-4"><input type="password" id="csPass" class="inp" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button onclick="doLogin()" id="btnLogin" class="btn-p w-full justify-center"><i id="loginIco" class="fas fa-sign-in-alt text-sm"></i><span id="loginTxt">Masuk</span></button>
+    <p id="loginErr" class="text-red-400 text-xs text-center mt-3 hidden"></p>
+    <p class="text-center text-xs text-slate-600 mt-4">Khusus akun role <strong class="text-violet-400">CS</strong> atau <strong class="text-red-400">Admin</strong></p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+
+  <!-- ═══ LEFT PANEL: CHAT LIST ═══ -->
+  <div id="panelLeft">
+    <!-- Header -->
+    <div class="panel-header">
+      <div class="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0" style="background:linear-gradient(135deg,#8b5cf6,#3b82f6)" id="csAvatar">CS</div>
+      <div class="flex-1 min-w-0">
+        <p class="font-black text-sm syne" id="csName">CS Agent</p>
+        <div class="flex items-center gap-1.5"><div class="online-dot on"></div><p class="text-[10px] text-emerald-400 font-bold">Online</p></div>
+      </div>
+      <button onclick="openStats()" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition shrink-0" style="background:rgba(255,255,255,.06)" title="Statistik"><i class="fas fa-chart-bar text-slate-400 text-xs"></i></button>
+      <a href="index.html" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition shrink-0" style="background:rgba(255,255,255,.06)" title="Ke Marketplace"><i class="fas fa-store text-slate-400 text-xs"></i></a>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="p-3 pb-2" style="border-bottom:1px solid var(--bd)">
+      <div class="relative mb-2">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 text-xs"></i>
+        <input id="chatSearch" type="text" class="inp !pl-8 !py-2 !text-xs" placeholder="Cari nama/pesan..." oninput="filterChats(this.value)">
+      </div>
+      <div class="flex gap-1.5 overflow-x-auto ns">
+        <button class="filter-btn active" data-f="all" onclick="setFilter('all',this)">Semua</button>
+        <button class="filter-btn" data-f="open" onclick="setFilter('open',this)">Open</button>
+        <button class="filter-btn" data-f="pending" onclick="setFilter('pending',this)">Pending</button>
+        <button class="filter-btn" data-f="escalated" onclick="setFilter('escalated',this)">Eskalasi</button>
+        <button class="filter-btn" data-f="closed" onclick="setFilter('closed',this)">Closed</button>
+      </div>
+    </div>
+
+    <!-- Chat List -->
+    <div id="chatList" class="flex-1 overflow-y-auto cs">
+      <div class="text-center text-slate-600 text-sm py-12"><i class="fas fa-comments text-3xl mb-2 block opacity-20"></i>Memuat percakapan...</div>
+    </div>
+  </div>
+
+  <!-- ═══ CENTER PANEL: CHAT WINDOW ═══ -->
+  <div id="panelCenter">
+    <!-- Empty state -->
+    <div id="emptyState" class="flex-1 flex flex-col items-center justify-center p-8 text-slate-600" style="display:flex!important">
+      <div class="w-16 h-16 rounded-2xl mb-4 flex items-center justify-center" style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.15)"><i class="fas fa-headset text-violet-400 text-2xl"></i></div>
+      <p class="font-bold text-slate-400 mb-1">Pilih percakapan</p>
+      <p class="text-xs text-center">Pilih chat dari daftar kiri untuk mulai membalas</p>
+    </div>
+
+    <!-- Chat active window -->
+    <div id="chatWin" style="display:none;flex:1;flex-direction:column;overflow:hidden;height:100%">
+      <!-- Chat header -->
+      <div class="panel-header" style="background:var(--bg2)">
+        <button class="md:hidden w-8 h-8 rounded-full flex items-center justify-center shrink-0 hover:bg-white/10" onclick="showChatList()" style="background:rgba(255,255,255,.06)"><i class="fas fa-arrow-left text-xs"></i></button>
+        <div id="chatAvatar" class="w-9 h-9 rounded-full shrink-0 flex items-center justify-center font-black text-sm" style="background:linear-gradient(135deg,#8b5cf6,#3b82f6)">?</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-sm lc1" id="chatName">-</p>
+          <div class="flex items-center gap-2">
+            <div id="chatOnlineDot" class="online-dot off"></div>
+            <p class="text-[10px] text-slate-500" id="chatLastSeen">-</p>
+          </div>
+        </div>
+        <div id="chatStatusBadge" class="st-badge st-open shrink-0">OPEN</div>
+        <!-- Action buttons -->
+        <div class="flex gap-1.5 shrink-0 ml-2">
+          <button onclick="setStatus('pending')" class="btn-y !py-1.5 !px-2.5 !text-[11px]" title="Tandai Pending"><i class="fas fa-clock text-xs"></i></button>
+          <button onclick="setStatus('closed')" class="btn-n !py-1.5 !px-2.5 !text-[11px]" title="Tutup Chat"><i class="fas fa-check text-xs"></i></button>
+          <button onclick="escalateToAdmin()" class="btn-r !py-1.5 !px-2.5 !text-[11px]" title="Eskalasi ke Admin"><i class="fas fa-arrow-up text-xs"></i></button>
+          <button onclick="toggleInfoPanel()" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition hidden md:flex" style="background:rgba(255,255,255,.06)"><i class="fas fa-info text-slate-400 text-xs"></i></button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="msgArea" class="cs"></div>
+
+      <!-- Typing indicator -->
+      <div id="typingIndicator"></div>
+
+      <!-- Input area -->
+      <div id="inputArea">
+        <label class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/10 transition shrink-0" style="background:rgba(255,255,255,.06)">
+          <i class="fas fa-image text-slate-500 text-xs"></i>
+          <input type="file" accept="image/*" class="hidden" onchange="sendImage(this)">
+        </label>
+        <textarea id="msgInput" placeholder="Tulis pesan..." rows="1"
+          oninput="autoResize(this);handleTyping()"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+        <button class="send-btn" onclick="sendMessage()"><i class="fas fa-paper-plane text-white text-sm"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT PANEL: USER INFO ═══ -->
+  <div id="panelRight">
+    <div class="panel-header"><h3 class="font-black text-sm syne">Info User</h3><button onclick="toggleInfoPanel()" class="ml-auto w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/10" style="background:rgba(255,255,255,.06)"><i class="fas fa-times text-xs"></i></button></div>
+    <div class="p-4 overflow-y-auto flex-1 cs space-y-3">
+      <div class="text-center py-4">
+        <div id="infoAvatar" class="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center font-black text-xl" style="background:linear-gradient(135deg,#8b5cf6,#3b82f6)">?</div>
+        <p class="font-bold" id="infoName">-</p>
+        <p class="text-xs text-slate-500" id="infoEmail">-</p>
+      </div>
+      <div class="rounded-xl p-3 space-y-2" style="background:var(--s2);border:1px solid var(--bd)">
+        <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Status Chat</p>
+        <div id="infoStatus" class="st-badge st-open">OPEN</div>
+      </div>
+      <div class="rounded-xl p-3" style="background:var(--s2);border:1px solid var(--bd)">
+        <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">Catatan CS</p>
+        <textarea id="csNote" class="inp !text-xs" style="height:80px;resize:none" placeholder="Tulis catatan internal..."></textarea>
+        <button onclick="saveNote()" class="btn-p !py-1.5 !px-3 !text-xs mt-2 w-full justify-center"><i class="fas fa-save text-xs"></i>Simpan</button>
+      </div>
+      <div class="rounded-xl p-3" style="background:var(--s2);border:1px solid var(--bd)">
+        <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">Quick Reply</p>
+        <div id="quickReplies" class="space-y-1.5"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: STATS -->
+<div id="mStats" class="modal-bg">
+  <div class="modal-box p-6">
+    <div class="flex items-center justify-between mb-4"><h2 class="text-lg font-black syne">Statistik CS</h2><button onclick="closeModal('mStats')" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10" style="background:rgba(255,255,255,.06)"><i class="fas fa-times text-xs"></i></button></div>
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="rounded-xl p-4 text-center" style="background:var(--s2);border:1px solid var(--bd)"><p class="text-2xl font-black text-blue-400" id="statTotal">0</p><p class="text-xs text-slate-500 mt-0.5">Total Chat</p></div>
+      <div class="rounded-xl p-4 text-center" style="background:var(--s2);border:1px solid var(--bd)"><p class="text-2xl font-black text-green-400" id="statOpen">0</p><p class="text-xs text-slate-500 mt-0.5">Open</p></div>
+      <div class="rounded-xl p-4 text-center" style="background:var(--s2);border:1px solid var(--bd)"><p class="text-2xl font-black text-amber-400" id="statPend">0</p><p class="text-xs text-slate-500 mt-0.5">Pending</p></div>
+      <div class="rounded-xl p-4 text-center" style="background:var(--s2);border:1px solid var(--bd)"><p class="text-2xl font-black text-red-400" id="statEsc">0</p><p class="text-xs text-slate-500 mt-0.5">Eskalasi</p></div>
+    </div>
+    <button onclick="closeModal('mStats')" class="btn-n w-full justify-center">Tutup</button>
+  </div>
+</div>
+
+<style>
+.filter-btn{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;border:1px solid var(--bd);background:rgba(255,255,255,.04);color:var(--mu);font-family:inherit;transition:.15s}
+.filter-btn:hover{background:rgba(255,255,255,.08);color:var(--tx)}
+.filter-btn.active{background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(59,130,246,.15));color:#c4b5fd;border-color:rgba(139,92,246,.4)}
+.lc1{overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+</style>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
+  from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { getDatabase, ref, onValue, get, set, push, update, remove, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+
+/* ── CONFIG ── */
+const FC = {
+  apiKey:'AIzaSyCAx7IrTxMKZVzr_joabmtObr_gneXi0EE',
+  authDomain:'marketplace-xrezzkystore.firebaseapp.com',
+  databaseURL:'https://marketplace-xrezzkystore-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId:'marketplace-xrezzkystore',
+  storageBucket:'marketplace-xrezzkystore.firebasestorage.app',
+  messagingSenderId:'522386534166',
+  appId:'1:522386534166:web:a80a8b4e8ce5296beeea37'
+};
+const CLOUD = 'drjmclzbi';
+const PRESET = 'xrezzky_unsigned';
+
+const app  = initializeApp(FC);
+const auth = getAuth(app);
+const db   = getDatabase(app);
+const $    = id => document.getElementById(id);
+
+/* ── STATE ── */
+let CU = null, CUData = null;
+let allChats = [], activeChat = null, activeChatId = null;
+let msgUnsub = null, presenceUnsub = null;
+let filterMode = 'all', toastTmr = null;
+let typingTmr = null, isTyping = false;
+
+/* ── QUICK REPLIES ── */
+const QUICK_REPLIES = [
+  'Halo! Ada yang bisa kami bantu? 😊',
+  'Terima kasih sudah menghubungi XREZZKY CS!',
+  'Pesanan Anda sedang kami proses, mohon tunggu ya.',
+  'Mohon maaf atas ketidaknyamanannya.',
+  'Silakan hubungi kami kembali jika ada pertanyaan.',
+  'Pesanan berhasil dikonfirmasi! ✅',
+  'Mohon upload bukti transfer Anda.',
+  'Produk akan segera dikirimkan.',
+  'Ada lagi yang bisa kami bantu?',
+];
+
+/* ══ TOAST ══ */
+const toast = function(title, msg, type) {
+  type = type || 'success';
+  var C = {success:'#22c55e',error:'#ef4444',info:'#3b82f6',warning:'#f59e0b'};
+  var I = {success:'fa-check-circle',error:'fa-times-circle',info:'fa-info-circle',warning:'fa-exclamation-circle'};
+  var B = {success:'rgba(34,197,94,.18)',error:'rgba(239,68,68,.18)',info:'rgba(59,130,246,.18)',warning:'rgba(245,158,11,.18)'};
+  $('tt').textContent = title; $('tm').textContent = msg;
+  var ti = $('ti');
+  if (ti) { ti.style.background = B[type]; ti.innerHTML = '<i class="fas '+I[type]+' text-xs" style="color:'+C[type]+'"></i>'; }
+  $('toast').style.transform = 'translateX(0)';
+  if (toastTmr) clearTimeout(toastTmr);
+  toastTmr = setTimeout(function(){ $('toast').style.transform = 'translateX(200%)'; }, 4000);
+};
+window.toast = toast;
+
+/* ══ MODAL ══ */
+window.openModal  = id => { var m=$(id); if(m){m.classList.add('on');document.body.style.overflow='hidden';} };
+window.closeModal = id => { var m=$(id); if(m){m.classList.remove('on');document.body.style.overflow='auto';} };
+document.querySelectorAll('.modal-bg').forEach(function(m){
+  m.addEventListener('click', function(e){ if(e.target===m) m.classList.remove('on'); });
+});
+
+/* ══ LOADER ══ */
+const dismiss = function() {
+  var l = $('loader');
+  if (l) { l.style.opacity='0'; setTimeout(function(){ l.style.display='none'; },500); }
+};
+
+/* ══ LOGIN ══ */
+window.doLogin = async function() {
+  var email = $('csEmail').value.trim();
+  var pass  = $('csPass').value;
+  if (!email || !pass) { showErr('Email & password wajib!'); return; }
+  var btn = $('btnLogin'); btn.disabled=true;
+  $('loginTxt').textContent='Masuk...'; $('loginIco').className='fas fa-spinner fa-spin text-sm';
+  try {
+    var cred = await signInWithEmailAndPassword(auth, email, pass);
+    var snap = await get(ref(db,'users/'+cred.user.uid));
+    var ud   = snap.exists() ? snap.val() : {};
+    if (ud.role !== 'cs' && ud.role !== 'admin') {
+      await signOut(auth);
+      showErr('Akses ditolak! Bukan role CS/Admin.');
+      return;
+    }
+    if (ud.banned) { await signOut(auth); showErr('Akun diblokir. Hubungi owner.'); return; }
+  } catch(e) {
+    var msg = (e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential')
+      ? 'Email atau password salah!' : e.message;
+    showErr(msg);
+  }
+  btn.disabled=false; $('loginTxt').textContent='Masuk'; $('loginIco').className='fas fa-sign-in-alt text-sm';
+};
+var showErr = function(msg) {
+  var el = $('loginErr');
+  if (el) { el.textContent=msg; el.classList.remove('hidden'); setTimeout(function(){ el.classList.add('hidden'); },5000); }
+};
+
+/* ══ LOGOUT ══ */
+window.doLogout = async function() {
+  if (!confirm('Yakin logout?')) return;
+  await signOut(auth); location.reload();
+};
+
+/* ══ LOAD CHAT ROOMS ══ */
+var loadChats = function() {
+  onValue(ref(db,'chats'), function(snap) {
+    allChats = [];
+    if (!snap.exists()) { renderChatList([]); return; }
+    snap.forEach(function(r) {
+      var d = r.val();
+      // CS bisa lihat SEMUA chat
+      allChats.push({ id: r.key, data: d });
+    });
+    allChats.sort(function(a,b){ return (b.data.lastAt||0)-(a.data.lastAt||0); });
+    renderChatList(allChats);
+    updateStats();
+  });
+};
+
+/* ══ RENDER CHAT LIST ══ */
+var renderChatList = function(list) {
+  var con = $('chatList'); if (!con) return;
+  var filtered = list.filter(function(c) {
+    if (filterMode === 'all') return true;
+    return (c.data.csStatus || 'open') === filterMode;
+  });
+  if (!filtered.length) {
+    con.innerHTML = '<div class="text-center text-slate-600 text-sm py-10"><i class="fas fa-comments text-3xl mb-2 block opacity-20"></i>Tidak ada chat '+(filterMode==='all'?'':'status '+filterMode)+'</div>';
+    return;
+  }
+  con.innerHTML = '';
+  filtered.forEach(function(c) {
+    var d     = c.data;
+    var st    = d.csStatus || 'open';
+    var name  = d.buyerName || d.partnerName || 'User';
+    var dt    = d.lastAt ? new Date(d.lastAt).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+    var unread= d.unreadCS && d.lastSenderUid !== CU.uid ? d.unreadCS : 0;
+    var stClass= {open:'st-open',pending:'st-pending',closed:'st-closed',escalated:'st-escalated'}[st]||'st-open';
+    var stLabel= {open:'Open',pending:'Pending',closed:'Closed',escalated:'Eskalasi'}[st]||st;
+    var isActive = c.id === activeChatId;
+    var item = document.createElement('div');
+    item.className = 'chat-item'+(isActive?' active':'');
+    item.onclick   = function(){ openChat(c.id, c.data); };
+    item.innerHTML = '<div class="av">'+name.charAt(0).toUpperCase()+'</div>'
+      +'<div class="flex-1 min-w-0">'
+        +'<div class="flex items-center justify-between gap-2 mb-0.5">'
+          +'<p class="font-bold text-sm lc1">'+name+'</p>'
+          +'<p class="text-[9px] text-slate-600 shrink-0">'+dt+'</p>'
+        +'</div>'
+        +'<div class="flex items-center justify-between gap-1">'
+          +'<p class="text-[11px] text-slate-500 lc1">'+(d.lastMsg||'...')+'</p>'
+          +'<span class="st-badge '+stClass+' shrink-0" style="font-size:8px;padding:1px 6px">'+stLabel+'</span>'
+        +'</div>'
+        +(d.productName?'<p class="text-[9px] text-violet-400 mt-0.5 lc1">📦 '+(d.productName||'')+'</p>':'')
+      +'</div>'
+      +(unread > 0 ? '<div class="unread-dot">'+unread+'</div>' : '');
+    con.appendChild(item);
+  });
+};
+
+/* ══ OPEN CHAT ══ */
+var openChat = function(roomId, roomData) {
+  activeChatId = roomId;
+  activeChat   = roomData;
+
+  $('emptyState').style.display = 'none';
+  $('chatWin').style.display    = 'flex';
+  $('chatWin').style.flexDirection = 'column';
+  $('chatWin').style.height     = '100%';
+
+  // Update header
+  var name = roomData.buyerName || roomData.partnerName || 'User';
+  $('chatName').textContent     = name;
+  $('chatAvatar').textContent   = name.charAt(0).toUpperCase();
+  $('infoName').textContent     = name;
+  $('infoEmail').textContent    = roomData.buyerEmail || '-';
+  $('infoAvatar').textContent   = name.charAt(0).toUpperCase();
+
+  var st      = roomData.csStatus || 'open';
+  var stClass = {open:'st-open',pending:'st-pending',closed:'st-closed',escalated:'st-escalated'}[st]||'st-open';
+  var stLabel = {open:'OPEN',pending:'PENDING',closed:'CLOSED',escalated:'ESKALASI'}[st]||st.toUpperCase();
+  $('chatStatusBadge').className = 'st-badge '+stClass+' shrink-0';
+  $('chatStatusBadge').textContent = stLabel;
+  $('infoStatus').className = 'st-badge '+stClass;
+  $('infoStatus').textContent = stLabel;
+
+  // Load note
+  get(ref(db,'chats/'+roomId+'/csNote')).then(function(s){ if($('csNote'))$('csNote').value=s.exists()?s.val():''; });
+
+  // Clear unread
+  update(ref(db,'chats/'+roomId), {unreadCS: 0}).catch(function(){});
+
+  // Re-render list (highlight active)
+  renderChatList(allChats);
+
+  // Load messages realtime
+  if (msgUnsub) msgUnsub();
+  msgUnsub = onValue(ref(db,'chats/'+roomId+'/messages'), function(snap) {
+    renderMessages(snap);
+  });
+
+  // Presence / last seen
+  if (presenceUnsub) presenceUnsub();
+  presenceUnsub = onValue(ref(db,'presence/'+roomId), function(snap) {
+    if (!snap.exists()) return;
+    var p = snap.val();
+    var dot = $('chatOnlineDot'), ls = $('chatLastSeen');
+    if (p.online && p.uid !== CU.uid) {
+      dot.className = 'online-dot on';
+      ls.textContent = 'Online';
+      ls.style.color = '#22c55e';
+    } else if (p.lastSeen) {
+      dot.className = 'online-dot off';
+      var ago = Math.floor((Date.now()-p.lastSeen)/60000);
+      ls.textContent = ago < 1 ? 'Baru saja' : ago < 60 ? ago+'m lalu' : Math.floor(ago/60)+'j lalu';
+      ls.style.color = '';
+    }
+    // Typing indicator
+    var tipEl = $('typingIndicator');
+    if (tipEl) {
+      if (p.typing && p.typingUid !== CU.uid) {
+        tipEl.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span><span style="margin-left:6px;font-size:11px;color:var(--mu)">'+(p.typingName||'User')+' sedang mengetik...</span>';
+      } else {
+        tipEl.innerHTML = '';
+      }
+    }
+  });
+
+  // Mobile: hide list show chat
+  if (window.innerWidth <= 768) {
+    $('panelLeft').classList.add('hidden-mobile');
+  }
+
+  // Load quick replies
+  renderQuickReplies();
+
+  // Set CS presence
+  setPresence(roomId, true);
+};
+
+/* ══ RENDER MESSAGES ══ */
+var renderMessages = function(snap) {
+  var area = $('msgArea'); if (!area) return;
+  area.innerHTML = '';
+  if (!snap.exists()) {
+    area.innerHTML = '<div class="bubble sys">Mulai percakapan</div>';
+    return;
+  }
+  var prev_date = '';
+  snap.forEach(function(ms) {
+    var m    = ms.val();
+    var isMe = m.sender === CU.uid;
+    var isSys = m.type === 'system' || m.sender === 'system';
+
+    // Date separator
+    if (m.createdAt) {
+      var dStr = new Date(m.createdAt).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+      if (dStr !== prev_date) {
+        prev_date = dStr;
+        var sep = document.createElement('div');
+        sep.style.cssText = 'text-align:center;margin:10px 0;font-size:10px;color:var(--mu)';
+        sep.textContent   = dStr;
+        area.appendChild(sep);
+      }
+    }
+
+    if (isSys) {
+      var sd = document.createElement('div'); sd.className='bubble sys'; sd.textContent=m.text; area.appendChild(sd); return;
+    }
+
+    var time   = m.createdAt ? new Date(m.createdAt).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '';
+    var status = m.status || 'sent';
+    var tickHTML = '';
+    if (isMe) {
+      var tcls = 'tick '+status;
+      if (status==='read')      tickHTML = '<span class="'+tcls+'">✓✓</span>';
+      else if (status==='delivered') tickHTML = '<span class="'+tcls+'">✓✓</span>';
+      else                      tickHTML = '<span class="'+tcls+'">✓</span>';
+    }
+    var isBukti = m.type === 'bukti_transfer';
+
+    var row = document.createElement('div');
+    row.className = 'msg-row '+(isMe?'me':'them');
+    if (!isMe) {
+      var av = document.createElement('div');
+      av.style.cssText = 'width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#3b82f6);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:9px;flex-shrink:0;margin-bottom:2px';
+      av.textContent   = (m.senderName||'?').charAt(0).toUpperCase();
+      row.appendChild(av);
+    }
+
+    var bbl = document.createElement('div');
+    bbl.className = 'bubble '+(isMe?'me':'them');
+
+    if (m.imageUrl) {
+      var badge = isBukti ? '<div style="font-size:9px;font-weight:800;color:#34d399;margin-bottom:5px"><i class="fas fa-receipt" style="margin-right:3px"></i>BUKTI TRANSFER</div>' : '';
+      bbl.innerHTML = badge+'<img src="'+m.imageUrl+'" style="max-width:200px;border-radius:10px;cursor:zoom-in;display:block" onclick="openFull(\''+m.imageUrl+'\')">'
+        +'<div class="msg-meta '+(isMe?'me':'them')+'"><span style="font-size:9px;color:var(--mu)">'+time+'</span>'+tickHTML+'</div>';
+    } else {
+      var txt = (m.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+      bbl.innerHTML = '<p style="font-size:13px;line-height:1.5">'+txt+'</p>'
+        +'<div class="msg-meta '+(isMe?'me':'them')+'"><span style="font-size:9px;color:var(--mu)">'+time+'</span>'+tickHTML+'</div>';
+    }
+
+    if (!isMe) {
+      var nameEl = document.createElement('p');
+      nameEl.style.cssText = 'font-size:9px;color:var(--mu);margin-bottom:2px;font-weight:600';
+      nameEl.textContent   = m.senderName || 'User';
+      bbl.insertBefore(nameEl, bbl.firstChild);
+    }
+
+    row.appendChild(bbl);
+    area.appendChild(row);
+
+    // Mark as read jika message dari user (bukan CS)
+    if (!isMe && status !== 'read' && ms.key) {
+      update(ref(db,'chats/'+activeChatId+'/messages/'+ms.key), {status:'read',readAt:Date.now()}).catch(function(){});
+    }
+  });
+
+  // Auto scroll to bottom
+  setTimeout(function(){ area.scrollTop = area.scrollHeight; }, 60);
+};
+
+/* ══ SEND MESSAGE ══ */
+window.sendMessage = async function() {
+  if (!activeChatId || !CU) return;
+  var inp  = $('msgInput');
+  var text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  autoResize(inp);
+  clearTyping();
+
+  var msg = {
+    sender:     CU.uid,
+    senderName: CUData ? (CUData.name || CUData.displayName || 'CS') : 'CS',
+    text:       text,
+    type:       'text',
+    status:     'sent',
+    createdAt:  Date.now(),
+  };
+  var msgRef = push(ref(db,'chats/'+activeChatId+'/messages'));
+  await set(msgRef, msg);
+
+  // Update last msg + increment unread for buyer
+  await update(ref(db,'chats/'+activeChatId), {
+    lastMsg:       text.slice(0,60),
+    lastAt:        Date.now(),
+    lastSenderUid: CU.uid,
+    unreadBuyer:   (activeChat.unreadBuyer||0)+1,
+    csStatus:      activeChat.csStatus || 'open',
+  });
+
+  // Update status to delivered after short delay (simulate)
+  setTimeout(function() {
+    update(ref(db,'chats/'+activeChatId+'/messages/'+msgRef.key), {status:'delivered'}).catch(function(){});
+  }, 800);
+};
+
+/* ══ SEND IMAGE ══ */
+window.sendImage = async function(inp) {
+  if (!activeChatId || !CU) return;
+  var file = inp.files[0]; if (!file) return;
+  if (file.size > 8*1024*1024) { toast('Error','Gambar maks 8MB!','error'); return; }
+  toast('Uploading...','Mengunggah gambar...','info');
+  try {
+    var fd = new FormData();
+    fd.append('file',file); fd.append('upload_preset',PRESET); fd.append('folder','xrezzky_chat');
+    var res  = await fetch('https://api.cloudinary.com/v1_1/'+CLOUD+'/image/upload',{method:'POST',body:fd});
+    var data = await res.json();
+    if (!data.secure_url) throw new Error('Upload gagal');
+    var msgRef = push(ref(db,'chats/'+activeChatId+'/messages'));
+    await set(msgRef,{
+      sender:CU.uid, senderName: CUData?CUData.name||'CS':'CS',
+      imageUrl:data.secure_url, text:'[Gambar]', type:'image',
+      status:'sent', createdAt:Date.now()
+    });
+    await update(ref(db,'chats/'+activeChatId),{
+      lastMsg:'[Gambar]',lastAt:Date.now(),lastSenderUid:CU.uid,
+      unreadBuyer:(activeChat.unreadBuyer||0)+1
+    });
+    setTimeout(function(){
+      update(ref(db,'chats/'+activeChatId+'/messages/'+msgRef.key),{status:'delivered'}).catch(function(){});
+    },800);
+    toast('Terkirim!','Gambar dikirim.','success');
+  } catch(e){ toast('Gagal',e.message,'error'); }
+  inp.value='';
+};
+
+/* ══ SET STATUS ══ */
+window.setStatus = async function(status) {
+  if (!activeChatId) return;
+  var stMap = {open:'OPEN',pending:'PENDING',closed:'CLOSED',escalated:'ESKALASI'};
+  await update(ref(db,'chats/'+activeChatId),{csStatus:status});
+  if (activeChat) activeChat.csStatus = status;
+
+  var stClass = {open:'st-open',pending:'st-pending',closed:'st-closed',escalated:'st-escalated'}[status]||'st-open';
+  $('chatStatusBadge').className = 'st-badge '+stClass+' shrink-0';
+  $('chatStatusBadge').textContent = stMap[status]||status.toUpperCase();
+  $('infoStatus').className = 'st-badge '+stClass;
+  $('infoStatus').textContent = stMap[status]||status.toUpperCase();
+
+  // System message
+  await push(ref(db,'chats/'+activeChatId+'/messages'),{
+    sender:'system',senderName:'System',
+    text:'Status chat diubah ke: '+stMap[status]+'  oleh CS.',
+    type:'system',createdAt:Date.now()
+  });
+  toast('Status diubah','Chat '+stMap[status],'success');
+};
+
+/* ══ ESCALATE TO ADMIN ══ */
+window.escalateToAdmin = async function() {
+  if (!activeChatId) return;
+  if (!confirm('Eskalasi chat ini ke Admin?')) return;
+  // Cari admin
+  var snap = await get(ref(db,'users'));
+  var adminUid = null;
+  if (snap.exists()) snap.forEach(function(u){ if(u.val().role==='admin'&&!adminUid)adminUid=u.key; });
+
+  await update(ref(db,'chats/'+activeChatId), {csStatus:'escalated', hasAdmin:true, adminUid:adminUid||null});
+  if (adminUid) await update(ref(db,'chats/'+activeChatId+'/participants'),{[adminUid]:true});
+
+  await push(ref(db,'chats/'+activeChatId+'/messages'),{
+    sender:'system',senderName:'System',
+    text:'🚨 Chat DIESKALASI ke Admin oleh CS. Admin akan segera bergabung.',
+    type:'system',createdAt:Date.now()
+  });
+  toast('Dieskalasi!','Admin telah dihubungi.','warning');
+  setStatus('escalated');
+};
+
+/* ══ SAVE NOTE ══ */
+window.saveNote = async function() {
+  if (!activeChatId) return;
+  var note = $('csNote') ? $('csNote').value.trim() : '';
+  await update(ref(db,'chats/'+activeChatId),{csNote:note,csNoteAt:Date.now()});
+  toast('Catatan disimpan','','success');
+};
+
+/* ══ QUICK REPLIES ══ */
+var renderQuickReplies = function() {
+  var con = $('quickReplies'); if (!con) return;
+  con.innerHTML = '';
+  QUICK_REPLIES.forEach(function(r) {
+    var btn = document.createElement('button');
+    btn.style.cssText='width:100%;text-align:left;padding:7px 10px;border-radius:8px;font-size:11px;cursor:pointer;transition:.15s;background:rgba(255,255,255,.03);border:1px solid var(--bd);color:var(--tx);font-family:inherit';
+    btn.onmouseenter = function(){ btn.style.background='rgba(139,92,246,.1)';btn.style.borderColor='rgba(139,92,246,.3)'; };
+    btn.onmouseleave = function(){ btn.style.background='rgba(255,255,255,.03)';btn.style.borderColor='var(--bd)'; };
+    btn.onclick = function(){ var i=$('msgInput');if(i)i.value=r;i.focus(); };
+    btn.textContent = r.length > 40 ? r.slice(0,40)+'...' : r;
+    con.appendChild(btn);
+  });
+};
+
+/* ══ FILTER ══ */
+window.setFilter = function(f, btn) {
+  filterMode = f;
+  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderChatList(allChats);
+};
+
+/* ══ SEARCH ══ */
+window.filterChats = function(q) {
+  if (!q) { renderChatList(allChats); return; }
+  var filtered = allChats.filter(function(c){
+    var d = c.data;
+    return (d.buyerName||d.partnerName||'').toLowerCase().includes(q.toLowerCase())
+      || (d.lastMsg||'').toLowerCase().includes(q.toLowerCase())
+      || (d.productName||'').toLowerCase().includes(q.toLowerCase());
+  });
+  renderChatList(filtered);
+};
+
+/* ══ TYPING ══ */
+window.handleTyping = function() {
+  if (!activeChatId || !CU) return;
+  var inp = $('msgInput');
+  update(ref(db,'presence/'+activeChatId),{typing:true,typingUid:CU.uid,typingName:CUData?CUData.name||'CS':'CS'}).catch(function(){});
+  if (typingTmr) clearTimeout(typingTmr);
+  typingTmr = setTimeout(clearTyping, 2000);
+};
+var clearTyping = function() {
+  if (!activeChatId || !CU) return;
+  update(ref(db,'presence/'+activeChatId),{typing:false,typingUid:null}).catch(function(){});
+};
+
+/* ══ PRESENCE ══ */
+var setPresence = function(roomId, online) {
+  if (!CU) return;
+  update(ref(db,'presence/'+roomId),{uid:CU.uid,online:online,lastSeen:Date.now()}).catch(function(){});
+};
+
+/* ══ STATS ══ */
+window.openStats = function() {
+  var total = allChats.length;
+  var open  = allChats.filter(function(c){return (c.data.csStatus||'open')==='open';}).length;
+  var pend  = allChats.filter(function(c){return (c.data.csStatus||'open')==='pending';}).length;
+  var esc   = allChats.filter(function(c){return (c.data.csStatus||'open')==='escalated';}).length;
+  $('statTotal').textContent = total;
+  $('statOpen').textContent  = open;
+  $('statPend').textContent  = pend;
+  $('statEsc').textContent   = esc;
+  openModal('mStats');
+};
+var updateStats = function() {
+  // Called after allChats update - auto updates openStats if open
+};
+
+/* ══ MOBILE ══ */
+window.showChatList = function() {
+  $('panelLeft').classList.remove('hidden-mobile');
+  $('emptyState').style.display = 'flex';
+  $('chatWin').style.display    = 'none';
+  activeChatId = null;
+  renderChatList(allChats);
+};
+
+/* ══ INFO PANEL ══ */
+window.toggleInfoPanel = function() {
+  var p = $('panelRight');
+  if (p) p.classList.toggle('closed');
+};
+
+/* ══ FULLSCREEN IMAGE ══ */
+window.openFull = function(url) {
+  var fv = document.getElementById('_cs_fv');
+  if (!fv) {
+    fv = document.createElement('div');
+    fv.id = '_cs_fv';
+    fv.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+    fv.onclick = function(){ fv.remove(); };
+    document.body.appendChild(fv);
+  }
+  fv.innerHTML = '<img src="'+url+'" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px" onclick="event.stopPropagation()">'
+    +'<button onclick="document.getElementById(\'_cs_fv\').remove()" style="position:absolute;top:18px;right:18px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white;width:38px;height:38px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>';
+  fv.style.display='flex';
+};
+
+/* ══ TEXTAREA AUTO RESIZE ══ */
+window.autoResize = function(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+};
+
+/* ══ AUTH STATE ══ */
+onAuthStateChanged(auth, async function(user) {
+  if (!user) {
+    dismiss();
+    $('lockScreen').classList.remove('hide');
+    $('app').style.display = 'none';
+    return;
+  }
+
+  var snapU = await get(ref(db,'users/'+user.uid));
+  var ud    = snapU.exists() ? snapU.val() : {};
+
+  if (ud.role !== 'cs' && ud.role !== 'admin') {
+    await signOut(auth);
+    dismiss();
+    $('lockScreen').classList.remove('hide');
+    var el = $('loginErr');
+    if (el){ el.textContent='Akses ditolak!'; el.classList.remove('hidden'); }
+    return;
+  }
+
+  CU     = user;
+  CUData = ud;
+
+  // Update header
+  var name = ud.name || user.displayName || 'CS Agent';
+  $('csName').textContent    = name;
+  $('csAvatar').textContent  = name.charAt(0).toUpperCase();
+  var roleBadge = ud.role === 'admin' ? '🔴 Admin' : '🟢 CS';
+  $('csName').title = roleBadge;
+
+  // Show app
+  $('lockScreen').classList.add('hide');
+  $('app').style.display = 'flex';
+  dismiss();
+
+  // Load chats
+  loadChats();
+});
+</script>
+</body>
+</html>

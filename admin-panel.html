@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XREZZKY | Admin Panel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{--bg:#05080f;--s1:#0f172a;--s2:#1e293b;--blue:#3b82f6;--red:#ef4444;--green:#22c55e;--yellow:#f59e0b;--border:rgba(255,255,255,.07);--glass:rgba(15,23,42,.85)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:#f1f5f9;overflow-x:hidden;min-height:100vh}
+.syne{font-family:'Syne',sans-serif}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--s2);border-radius:8px}
+.glass{background:var(--glass);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:16px}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:20px}
+.inp{width:100%;background:#070b14;border:1px solid var(--border);padding:11px 14px;border-radius:10px;color:#f1f5f9;font-family:'Plus Jakarta Sans',sans-serif;font-size:.875rem;transition:.25s}
+.inp:focus{border-color:var(--blue);outline:none;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+select.inp option{background:var(--s1)}
+textarea.inp{resize:vertical;min-height:80px}
+.btn{padding:10px 20px;border-radius:10px;font-weight:700;font-size:.8rem;cursor:pointer;border:none;font-family:'Plus Jakarta Sans',sans-serif;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.btn:active{transform:scale(.97)}
+.btn-blue{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}.btn-blue:hover{opacity:.9}
+.btn-red{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}.btn-red:hover{opacity:.9}
+.btn-green{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}.btn-green:hover{opacity:.9}
+.btn-yellow{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}.btn-yellow:hover{opacity:.9}
+.btn-ghost{background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid var(--border)}.btn-ghost:hover{background:rgba(255,255,255,.1);color:#f1f5f9}
+#sidebar{width:240px;min-height:100vh;background:var(--s1);border-right:1px solid var(--border);position:fixed;left:0;top:0;z-index:50;transition:.3s;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;cursor:pointer;transition:.2s;font-size:.82rem;font-weight:600;color:#64748b;margin:2px 8px}
+.nav-item:hover{background:rgba(255,255,255,.05);color:#f1f5f9}
+.nav-item.active{background:rgba(59,130,246,.15);color:var(--blue);border-left:3px solid var(--blue);padding-left:13px}
+#content{margin-left:240px;min-height:100vh;padding:28px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;position:relative;animation:sup .3s ease}
+.modal-lg{max-width:720px}
+@keyframes sup{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.stat-card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:20px;position:relative;overflow:hidden;transition:.3s}
+.stat-card:hover{border-color:rgba(255,255,255,.15)}
+.stat-card::before{content:'';position:absolute;top:-40%;right:-20%;width:140px;height:140px;border-radius:50%;opacity:.08}
+.stat-blue::before{background:#3b82f6}.stat-green::before{background:#22c55e}
+.stat-yellow::before{background:#f59e0b}.stat-red::before{background:#ef4444}
+.stat-purple::before{background:#a855f7}.stat-cyan::before{background:#06b6d4}
+.badge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.badge-pending{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.badge-approved{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+.badge-rejected{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.badge-banned{background:rgba(239,68,68,.25);color:#f87171;border:1px solid rgba(239,68,68,.4)}
+.badge-buyer{background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3)}
+.badge-seller{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+.badge-admin{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;padding:10px 14px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#475569;border-bottom:1px solid var(--border)}
+.tbl td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.82rem;vertical-align:middle}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+#toast{position:fixed;top:20px;right:20px;z-index:9999;transform:translateX(150%);transition:.4s}
+.toast-inner{background:var(--s2);border:1px solid var(--border);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.spin{width:20px;height:20px;border:2px solid var(--border);border-top:2px solid var(--blue);border-radius:50%;animation:spinning 1s linear infinite;display:inline-block}
+@keyframes spinning{to{transform:rotate(360deg)}}
+.tag-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#93c5fd;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700}
+.section{display:none}.section.active{display:block}
+@keyframes fin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.section.active{animation:fin .35s ease}
+/* LOCK SCREEN */
+#lockScreen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .4s}
+#lockScreen.hide{opacity:0;pointer-events:none}
+/* LOADING STATE */
+#authLoading{display:none;position:fixed;inset:0;background:var(--bg);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#authLoading.show{display:flex}
+/* ANNOUNCEMENT */
+.announcement-item{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+/* SEARCH HIGHLIGHT */
+.hl{background:rgba(59,130,246,.3);border-radius:3px;padding:0 2px}
+</style>
+</head>
+<body>
+
+<!-- AUTH LOADING (saat cek role) -->
+<div id="authLoading">
+  <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-blue-900/50">
+    <i class="fas fa-shield-halved text-white text-xl"></i>
+  </div>
+  <div class="spin"></div>
+  <p class="text-slate-500 text-sm mt-2" id="authLoadingMsg">Memverifikasi akses admin...</p>
+</div>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="text-center mb-8">
+    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-900/50">
+      <i class="fas fa-shield-halved text-white text-2xl"></i>
+    </div>
+    <h1 class="text-2xl font-extrabold syne text-white mb-1">XREZZKY ADMIN</h1>
+    <p class="text-sm text-slate-500">Masuk dengan akun yang memiliki role admin</p>
+  </div>
+  <div style="width:100%;max-width:380px" class="card">
+    <div class="mb-4">
+      <label class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 block">Email</label>
+      <div class="relative">
+        <i class="fas fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 text-sm"></i>
+        <input id="lockEmail" type="email" class="inp !pl-10" placeholder="email@contoh.com" onkeydown="if(event.key==='Enter')doAdminLogin()">
+      </div>
+    </div>
+    <div class="mb-5">
+      <label class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 block">Password</label>
+      <div class="relative">
+        <i class="fas fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 text-sm"></i>
+        <input id="lockPass" type="password" class="inp !pl-10 !pr-10" placeholder="Password kamu" onkeydown="if(event.key==='Enter')doAdminLogin()">
+        <button onclick="togglePass()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-300 transition">
+          <i id="passEye" class="fas fa-eye text-sm"></i>
+        </button>
+      </div>
+    </div>
+    <button onclick="doAdminLogin()" id="loginBtn" class="btn btn-blue w-full justify-center py-3 text-sm">
+      <i class="fas fa-sign-in-alt"></i> Masuk ke Admin Panel
+    </button>
+    <p id="lockErr" class="text-red-400 text-xs text-center mt-3 hidden"></p>
+    <p class="text-center text-[10px] text-slate-700 mt-4">Hanya akun dengan role <span class="text-red-400 font-bold">admin</span> di Firebase yang bisa masuk.</p>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="p-5 border-b border-white/5 mb-2">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shrink-0"><i class="fas fa-bolt text-white text-sm"></i></div>
+      <div><p class="font-extrabold syne text-sm text-white">XREZZKY</p><p class="text-[10px] text-red-400 font-black uppercase tracking-widest">Admin Panel</p></div>
+    </div>
+  </div>
+
+  <div class="px-3 pb-32">
+    <p class="text-[9px] text-slate-600 font-black uppercase tracking-widest px-3 mb-1 mt-3">Overview</p>
+    <div class="nav-item active" onclick="go('dashboard')"><i class="fas fa-gauge-high w-4"></i> Dashboard</div>
+    <div class="nav-item" onclick="go('analytics')"><i class="fas fa-chart-line w-4"></i> Analitik</div>
+
+    <p class="text-[9px] text-slate-600 font-black uppercase tracking-widest px-3 mb-1 mt-4">Marketplace</p>
+    <div class="nav-item" onclick="go('marketplace')"><i class="fas fa-sliders w-4"></i> Pengaturan Toko</div>
+    <div class="nav-item" onclick="go('products')"><i class="fas fa-boxes-stacked w-4"></i> Semua Produk</div>
+    <div class="nav-item" onclick="go('categories')"><i class="fas fa-tags w-4"></i> Kategori & Banner</div>
+    <div class="nav-item" onclick="go('orders')"><i class="fas fa-receipt w-4"></i> Kelola Order</div>
+    <div class="nav-item" onclick="go('announcements')"><i class="fas fa-bullhorn w-4"></i> Pengumuman</div>
+
+    <p class="text-[9px] text-slate-600 font-black uppercase tracking-widest px-3 mb-1 mt-4">Pengguna</p>
+    <div class="nav-item" onclick="go('sellers')"><i class="fas fa-store w-4"></i> Seller & Toko <span id="pendingBadge" class="ml-auto text-[9px] bg-yellow-500 text-black px-1.5 py-0.5 rounded-full font-black hidden">0</span></div>
+    <div class="nav-item" onclick="go('buyers')"><i class="fas fa-users w-4"></i> Pelanggan</div>
+    <div class="nav-item" onclick="go('roles')"><i class="fas fa-user-shield w-4"></i> Kelola Role</div>
+
+    <p class="text-[9px] text-slate-600 font-black uppercase tracking-widest px-3 mb-1 mt-4">Sistem</p>
+    <div class="nav-item" onclick="go('logs')"><i class="fas fa-clock-rotate-left w-4"></i> Log Aktivitas</div>
+    <div class="nav-item" onclick="go('security')"><i class="fas fa-lock w-4"></i> Keamanan</div>
+  </div>
+
+  <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-white/5 bg-[var(--s1)]">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 font-bold text-sm" id="adminAvatar">A</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-bold truncate" id="adminName">Admin</p>
+        <p class="text-[10px] text-red-400 font-black" id="adminEmail">-</p>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <a href="index.html" class="btn btn-ghost text-xs flex-1 justify-center"><i class="fas fa-store text-xs"></i> Toko</a>
+      <button onclick="doLogout()" class="btn btn-ghost text-xs flex-1 justify-center text-red-400"><i class="fas fa-sign-out-alt text-xs"></i> Keluar</button>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="content">
+
+  <!-- ===== DASHBOARD ===== -->
+  <section id="sec-dashboard" class="section active">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-extrabold syne">Dashboard</h1>
+        <p class="text-slate-500 text-sm" id="dashDate">-</p>
+      </div>
+      <div class="flex gap-2">
+        <span id="realtimeDot" class="flex items-center gap-1.5 text-xs text-green-400 font-bold"><span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Realtime</span>
+      </div>
+    </div>
+
+    <!-- STAT CARDS ROW 1 -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+      <div class="stat-card stat-blue">
+        <p class="text-xs text-slate-500 font-bold uppercase mb-1">Pelanggan</p>
+        <p class="text-3xl font-extrabold syne text-blue-400" id="st-pelanggan">-</p>
+        <p class="text-[10px] text-slate-600 mt-1">Buyer + Seller aktif</p>
+      </div>
+      <div class="stat-card stat-green">
+        <p class="text-xs text-slate-500 font-bold uppercase mb-1">Produk Aktif</p>
+        <p class="text-3xl font-extrabold syne text-green-400" id="st-products">-</p>
+        <p class="text-[10px] text-slate-600 mt-1">Di marketplace</p>
+      </div>
+      <div class="stat-card stat-yellow">
+        <p class="text-xs text-slate-500 font-bold uppercase mb-1">Toko Aktif</p>
+        <p class="text-3xl font-extrabold syne text-yellow-400" id="st-stores">-</p>
+        <p class="text-[10px] text-slate-600 mt-1">Seller approved</p>
+      </div>
+      <div class="stat-card stat-purple">
+        <p class="text-xs text-slate-500 font-bold uppercase mb-1">Total Order</p>
+        <p class="text-3xl font-extrabold syne text-purple-400" id="st-orders">-</p>
+        <p class="text-[10px] text-slate-600 mt-1">Semua transaksi</p>
+      </div>
+    </div>
+    <!-- STAT CARDS ROW 2 -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="stat-card stat-red">
+        <p class="text-xs text-slate-500 font-bold uppercase mb-1">Pending Seller</p>
+        <p class="text-3xl font-extrabold syne text-red-400" id="st-pending">-</p>
+        <p class="text-[10px] text-slate-600 mt-1">Menunggu review</p>
+      </div>
+      <div class="stat-card" style="border-color:rgba(251,191,36,.15)">
+        <p class="text-xs text-slate-500 font-bold uppercase mb-1">Rating Global</p>
+        <p class="text-3xl font-extrabold syne text-yellow-300" id="st-rating">-</p>
+        <p class="text-[10px] text-slate-600 mt-1">Rata-rata semua produk</p>
+      </div>
+      <div class="stat-card" style="border-color:rgba(168,85,247,.15)">
+        <p class="text-xs text-slate-500 font-bold uppercase mb-1">Total Ulasan</p>
+        <p class="text-3xl font-extrabold syne text-purple-300" id="st-reviews">-</p>
+        <p class="text-[10px] text-slate-600 mt-1">Dari semua produk</p>
+      </div>
+      <div class="stat-card stat-cyan" style="border-color:rgba(6,182,212,.15)">
+        <p class="text-xs text-slate-500 font-bold uppercase mb-1">Total Terjual</p>
+        <p class="text-3xl font-extrabold syne text-cyan-300" id="st-sold">-</p>
+        <p class="text-[10px] text-slate-600 mt-1">Unit produk terjual</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+      <!-- PENDING SELLERS -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold syne flex items-center gap-2"><i class="fas fa-clock text-yellow-400"></i> Seller Pending</h3>
+          <button onclick="go('sellers')" class="btn btn-ghost text-xs">Lihat Semua</button>
+        </div>
+        <div id="dashPending"></div>
+      </div>
+      <!-- RECENT ORDERS -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold syne flex items-center gap-2"><i class="fas fa-receipt text-blue-400"></i> Order Terbaru</h3>
+          <button onclick="go('orders')" class="btn btn-ghost text-xs">Lihat Semua</button>
+        </div>
+        <div id="dashOrders"></div>
+      </div>
+    </div>
+
+    <!-- RECENT PRODUCTS -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold syne flex items-center gap-2"><i class="fas fa-box text-green-400"></i> Produk Terbaru</h3>
+        <button onclick="go('products')" class="btn btn-ghost text-xs">Lihat Semua</button>
+      </div>
+      <div id="dashProducts"></div>
+    </div>
+  </section>
+
+  <!-- ===== ANALITIK ===== -->
+  <section id="sec-analytics" class="section">
+    <h1 class="text-2xl font-extrabold syne mb-6">Analitik</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+      <div class="card">
+        <h3 class="font-bold text-sm mb-4 flex items-center gap-2"><i class="fas fa-users text-blue-400"></i> Distribusi Pengguna</h3>
+        <div id="userDistChart"></div>
+      </div>
+      <div class="card">
+        <h3 class="font-bold text-sm mb-4 flex items-center gap-2"><i class="fas fa-star text-yellow-400"></i> Produk Rating Tertinggi</h3>
+        <div id="topRatedList"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="font-bold text-sm mb-4 flex items-center gap-2"><i class="fas fa-store text-green-400"></i> Performa Toko</h3>
+      <div id="storePerf" class="overflow-x-auto"></div>
+    </div>
+  </section>
+
+  <!-- ===== MARKETPLACE SETTINGS ===== -->
+  <section id="sec-marketplace" class="section">
+    <h1 class="text-2xl font-extrabold syne mb-6">Pengaturan Marketplace</h1>
+
+    <!-- HERO BANNER -->
+    <div class="card mb-5">
+      <h3 class="font-bold syne mb-1 flex items-center gap-2"><i class="fas fa-image text-blue-400"></i> Hero Banner</h3>
+      <p class="text-xs text-yellow-400 font-bold mb-4">⚠️ Kosongkan field ini jika tidak ingin banner ditampilkan di marketplace</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Judul Utama</label>
+          <input id="cfg_title1" type="text" class="inp mb-3" placeholder="Contoh: XREZZKY">
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Subjudul</label>
+          <input id="cfg_title2" type="text" class="inp mb-3" placeholder="Contoh: OFFICIAL STORE">
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Tagline</label>
+          <textarea id="cfg_tagline" class="inp" rows="2" placeholder="Contoh: Platform jual-beli digital terpercaya."></textarea>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Stat 1 — Angka & Label</label>
+          <div class="flex gap-2 mb-3"><input id="cfg_stat1n" type="text" class="inp" placeholder="Contoh: 500+"><input id="cfg_stat1l" type="text" class="inp" placeholder="Contoh: Produk"></div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Stat 2 — Angka & Label</label>
+          <div class="flex gap-2 mb-3"><input id="cfg_stat2n" type="text" class="inp" placeholder="Contoh: 2K+"><input id="cfg_stat2l" type="text" class="inp" placeholder="Contoh: Pembeli"></div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Stat 3 — Angka & Label</label>
+          <div class="flex gap-2"><input id="cfg_stat3n" type="text" class="inp" placeholder="Contoh: 4.9★"><input id="cfg_stat3l" type="text" class="inp" placeholder="Contoh: Rating"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+        <label class="toggle"><input type="checkbox" id="cfg_bannerEnabled"><span class="toggle-slider"></span></label>
+        <div><p class="text-sm font-bold">Tampilkan Banner di Marketplace</p><p class="text-[10px] text-slate-500">Centang untuk mengaktifkan hero banner</p></div>
+      </div>
+      <button onclick="saveCfg('hero')" class="btn btn-blue"><i class="fas fa-save"></i> Simpan Banner</button>
+    </div>
+
+    <!-- PROMO TICKER -->
+    <div class="card mb-5">
+      <h3 class="font-bold syne mb-1 flex items-center gap-2"><i class="fas fa-bullhorn text-yellow-400"></i> Promo Ticker</h3>
+      <p class="text-xs text-slate-500 mb-3">Teks yang bergulir di marketplace. <span class="text-yellow-400 font-bold">Contoh: ✨ Flash Sale ML hingga 50% OFF · 🎮 Gratis ongkir pembelian pertama</span></p>
+      <div class="flex items-center gap-3 mb-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+        <label class="toggle"><input type="checkbox" id="cfg_tickerEnabled"><span class="toggle-slider"></span></label>
+        <div><p class="text-sm font-bold">Aktifkan Promo Ticker</p><p class="text-[10px] text-slate-500">Nonaktifkan jika tidak ingin ticker tampil</p></div>
+      </div>
+      <div id="tickerList" class="space-y-2 mb-3"></div>
+      <div class="flex gap-2 mb-3">
+        <input id="newTicker" type="text" class="inp flex-1" placeholder="✨ Tulis teks promo baru...">
+        <button onclick="addTicker()" class="btn btn-blue shrink-0"><i class="fas fa-plus"></i> Tambah</button>
+      </div>
+      <button onclick="saveCfg('ticker')" class="btn btn-blue"><i class="fas fa-save"></i> Simpan Ticker</button>
+    </div>
+
+    <!-- FITUR UNGGULAN -->
+    <div class="card mb-5">
+      <h3 class="font-bold syne mb-1 flex items-center gap-2"><i class="fas fa-tags text-green-400"></i> Fitur Unggulan</h3>
+      <p class="text-xs text-slate-500 mb-3">4 kotak fitur di bawah hero banner. Nama icon dari FontAwesome (contoh: fa-shield-alt).</p>
+      <div id="featureList" class="space-y-3 mb-3"></div>
+      <div class="flex gap-2">
+        <button onclick="addFeature()" class="btn btn-ghost text-xs"><i class="fas fa-plus"></i> Tambah Fitur</button>
+        <button onclick="saveCfg('features')" class="btn btn-blue text-xs"><i class="fas fa-save"></i> Simpan Fitur</button>
+      </div>
+    </div>
+
+    <!-- SELLER CTA -->
+    <div class="card">
+      <h3 class="font-bold syne mb-4 flex items-center gap-2"><i class="fas fa-store text-purple-400"></i> Banner Seller CTA</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Label Kecil</label>
+          <input id="cfg_ctaLabel" type="text" class="inp mb-3" placeholder="Jadi Seller di XREZZKY">
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Judul</label>
+          <input id="cfg_ctaTitle" type="text" class="inp mb-3" placeholder="Buka Toko Kamu Sekarang">
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Deskripsi</label>
+          <input id="cfg_ctaDesc" type="text" class="inp" placeholder="Jangkau ribuan pembeli · Gratis daftar">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Teks Tombol</label>
+          <input id="cfg_ctaBtn" type="text" class="inp mb-3" placeholder="Mulai">
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Nomor WA Admin Default</label>
+          <input id="cfg_adminWa" type="tel" class="inp" placeholder="628123456789">
+        </div>
+      </div>
+      <button onclick="saveCfg('cta')" class="btn btn-blue mt-4"><i class="fas fa-save"></i> Simpan CTA</button>
+    </div>
+  </section>
+
+  <!-- ===== PRODUK ===== -->
+  <section id="sec-products" class="section">
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+      <h1 class="text-2xl font-extrabold syne">Semua Produk</h1>
+      <input type="text" id="prodSearch" placeholder="Cari produk..." class="inp !w-56" oninput="renderProducts(this.value)">
+    </div>
+    <div class="card overflow-x-auto">
+      <table class="tbl" id="prodTable">
+        <thead><tr><th>Produk</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Terjual</th><th>Rating</th><th>Seller</th><th>Aksi</th></tr></thead>
+        <tbody id="prodBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== KATEGORI ===== -->
+  <section id="sec-categories" class="section">
+    <h1 class="text-2xl font-extrabold syne mb-5">Kategori & Label</h1>
+    <div class="card mb-5">
+      <h3 class="font-bold syne mb-1 flex items-center gap-2"><i class="fas fa-list text-blue-400"></i> Kategori Aktif</h3>
+      <p class="text-xs text-yellow-400 font-bold mb-3">Contoh: Game Mobile · Premium Apps · E-Voucher · Akun Sosmed · Jasa Digital</p>
+      <div id="catList" class="flex flex-wrap gap-2 mb-4 min-h-[36px]"></div>
+      <div class="flex gap-2">
+        <input id="newCat" type="text" class="inp flex-1" placeholder="Nama kategori baru..." onkeydown="if(event.key==='Enter')addCategory()">
+        <button onclick="addCategory()" class="btn btn-blue shrink-0"><i class="fas fa-plus"></i> Tambah</button>
+      </div>
+      <button onclick="saveCfg('categories')" class="btn btn-blue mt-3"><i class="fas fa-save"></i> Simpan Kategori</button>
+    </div>
+    <div class="card">
+      <h3 class="font-bold syne mb-1 flex items-center gap-2"><i class="fas fa-certificate text-yellow-400"></i> Trust Badges</h3>
+      <p class="text-xs text-slate-500 mb-3">Label kepercayaan di hero banner (pisah koma)</p>
+      <input id="cfg_trustBadges" type="text" class="inp mb-3" placeholder="TERJAMIN, TRUSTED, #1 MARKETPLACE">
+      <button onclick="saveCfg('trustBadges')" class="btn btn-blue"><i class="fas fa-save"></i> Simpan</button>
+    </div>
+  </section>
+
+  <!-- ===== ORDER ===== -->
+  <section id="sec-orders" class="section">
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+      <h1 class="text-2xl font-extrabold syne">Kelola Order</h1>
+      <div class="flex gap-2">
+        <select id="orderStatusFilter" class="inp !w-44" onchange="renderOrders()">
+          <option value="all">Semua Status</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Terkonfirmasi</option>
+          <option value="payment">Menunggu Bayar</option>
+          <option value="processing">Diproses</option>
+          <option value="shipped">Dikirim</option>
+          <option value="completed">Selesai</option>
+          <option value="cancelled">Dibatalkan</option>
+        </select>
+        <button onclick="openM('mAddOrder')" class="btn btn-blue text-xs"><i class="fas fa-plus"></i> Order Manual</button>
+      </div>
+    </div>
+    <div class="card overflow-x-auto">
+      <table class="tbl">
+        <thead><tr><th>ID Order</th><th>Pembeli</th><th>Produk</th><th>Toko</th><th>Total</th><th>Qty</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+        <tbody id="orderBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== PENGUMUMAN ===== -->
+  <section id="sec-announcements" class="section">
+    <h1 class="text-2xl font-extrabold syne mb-5">Pengumuman</h1>
+    <div class="card mb-5">
+      <h3 class="font-bold syne mb-4 flex items-center gap-2"><i class="fas fa-plus text-green-400"></i> Buat Pengumuman Baru</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Judul Pengumuman <span class="text-red-400">*</span></label>
+          <input id="ann_title" type="text" class="inp" placeholder="Contoh: Maintenance Malam Ini">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Isi Pengumuman <span class="text-red-400">*</span></label>
+          <textarea id="ann_body" class="inp" rows="3" placeholder="Tulis isi pengumuman..."></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Tipe</label>
+            <select id="ann_type" class="inp">
+              <option value="info">ℹ️ Info</option>
+              <option value="warning">⚠️ Peringatan</option>
+              <option value="success">✅ Pengumuman Baik</option>
+              <option value="error">🚨 Penting / Darurat</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Target</label>
+            <select id="ann_target" class="inp">
+              <option value="all">Semua Pengguna</option>
+              <option value="buyer">Pembeli Saja</option>
+              <option value="seller">Seller Saja</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button onclick="submitAnnouncement()" class="btn btn-blue mt-4"><i class="fas fa-paper-plane"></i> Kirim Pengumuman</button>
+    </div>
+    <div class="card">
+      <h3 class="font-bold syne mb-4 flex items-center gap-2"><i class="fas fa-list text-blue-400"></i> Pengumuman Aktif</h3>
+      <div id="annList"></div>
+    </div>
+  </section>
+
+  <!-- ===== SELLER & TOKO ===== -->
+  <section id="sec-sellers" class="section">
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+      <h1 class="text-2xl font-extrabold syne">Seller & Toko</h1>
+      <select id="sellerFilter" class="inp !w-44" onchange="renderSellers()">
+        <option value="all">Semua</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Ditolak</option>
+        <option value="banned">Banned</option>
+      </select>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="sellerCards"></div>
+  </section>
+
+  <!-- ===== PELANGGAN ===== -->
+  <section id="sec-buyers" class="section">
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+      <h1 class="text-2xl font-extrabold syne">Pelanggan</h1>
+      <div class="flex gap-2">
+        <select id="buyerRoleFilter" class="inp !w-36" onchange="renderBuyers()">
+          <option value="all">Semua Role</option>
+          <option value="buyer">Buyer</option>
+          <option value="seller">Seller</option>
+          <option value="admin">Admin</option>
+        </select>
+        <input type="text" id="buyerSearch" placeholder="Cari nama / email..." class="inp !w-52" oninput="renderBuyers()">
+      </div>
+    </div>
+    <div class="card overflow-x-auto">
+      <table class="tbl">
+        <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Status</th><th>Daftar</th><th>Aksi</th></tr></thead>
+        <tbody id="buyerBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== KELOLA ROLE ===== -->
+  <section id="sec-roles" class="section">
+    <h1 class="text-2xl font-extrabold syne mb-5">Kelola Role Pengguna</h1>
+    <div class="card mb-5">
+      <h3 class="font-bold syne mb-1 flex items-center gap-2"><i class="fas fa-user-shield text-red-400"></i> Ubah Role User</h3>
+      <p class="text-xs text-slate-500 mb-4">Masukkan UID atau Email user untuk mengubah role-nya di Firebase. Gunakan ini untuk meng-upgrade akun ke Admin.</p>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Cari User (Nama / Email)</label>
+          <input id="roleSearch" type="text" class="inp" placeholder="Ketik nama atau email..." oninput="searchUserForRole(this.value)">
+        </div>
+        <div id="roleSearchResults" class="space-y-2"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="font-bold syne mb-4 flex items-center gap-2"><i class="fas fa-crown text-yellow-400"></i> Semua Admin</h3>
+      <div id="adminList"></div>
+    </div>
+  </section>
+
+  <!-- ===== LOG AKTIVITAS ===== -->
+  <section id="sec-logs" class="section">
+    <div class="flex items-center justify-between mb-5">
+      <h1 class="text-2xl font-extrabold syne">Log Aktivitas</h1>
+      <button onclick="clearLogs()" class="btn btn-ghost text-xs text-red-400"><i class="fas fa-trash"></i> Hapus Log</button>
+    </div>
+    <div class="card">
+      <div id="activityLog"></div>
+    </div>
+  </section>
+
+  <!-- ===== KEAMANAN ===== -->
+  <section id="sec-security" class="section">
+    <h1 class="text-2xl font-extrabold syne mb-5">Keamanan</h1>
+    <div class="card mb-5">
+      <h3 class="font-bold syne mb-1 flex items-center gap-2"><i class="fas fa-key text-yellow-400"></i> Kode Konfirmasi Admin</h3>
+      <p class="text-xs text-slate-500 mb-4">Kode ini diperlukan untuk aksi berbahaya (hapus, ban, dll).</p>
+      <div class="flex items-center gap-4 p-3 bg-white/5 rounded-xl mb-4">
+        <p class="text-xs text-slate-500">Kode saat ini:</p>
+        <p class="font-mono font-black text-yellow-400 text-lg" id="currentCode">-</p>
+      </div>
+      <div class="flex gap-2">
+        <input id="newCode" type="text" class="inp flex-1" placeholder="Kode baru (min 6 karakter)">
+        <button onclick="saveAdminCode()" class="btn btn-yellow shrink-0"><i class="fas fa-save"></i> Simpan</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="font-bold syne mb-1 flex items-center gap-2 text-red-400"><i class="fas fa-radiation"></i> Zona Bahaya</h3>
+      <p class="text-xs text-slate-500 mb-4">Aksi di bawah ini tidak bisa dibatalkan. Pikir dua kali.</p>
+      <div class="flex flex-wrap gap-3">
+        <button onclick="triggerClearData('products')" class="btn btn-red text-xs"><i class="fas fa-trash"></i> Hapus Semua Produk</button>
+        <button onclick="triggerClearData('seller_applications')" class="btn btn-red text-xs"><i class="fas fa-trash"></i> Hapus Semua Toko</button>
+        <button onclick="triggerClearData('orders')" class="btn btn-red text-xs"><i class="fas fa-trash"></i> Hapus Semua Order</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- TOAST -->
+<div id="toast">
+  <div class="toast-inner">
+    <div id="toastIco" class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0"><i class="fas fa-info-circle text-sm"></i></div>
+    <div><p class="font-bold text-sm" id="toastT">-</p><p class="text-xs text-slate-400" id="toastM">-</p></div>
+  </div>
+</div>
+
+<!-- ======= MODALS ======= -->
+
+<!-- SELLER DETAIL -->
+<div id="mSellerDetail" class="overlay">
+  <div class="modal modal-lg p-0 overflow-hidden">
+    <div class="relative p-7 bg-gradient-to-b from-blue-600/20 to-transparent">
+      <button onclick="closeM('mSellerDetail')" class="absolute top-4 right-4 w-9 h-9 bg-black/20 rounded-full flex items-center justify-center hover:bg-white/10 transition"><i class="fas fa-times text-sm"></i></button>
+      <div class="flex items-center gap-4">
+        <div id="sdAvatar" class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-2xl font-bold">S</div>
+        <div><h2 id="sdStoreName" class="text-xl font-extrabold syne">-</h2><p id="sdOwner" class="text-slate-400 text-sm">-</p><div id="sdStatusBadge" class="mt-1"></div></div>
+      </div>
+    </div>
+    <div class="px-7 pb-7 space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-slate-500 uppercase font-bold mb-0.5">Email</p><p id="sdEmail" class="text-sm font-semibold break-all">-</p></div>
+        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-slate-500 uppercase font-bold mb-0.5">WhatsApp</p><p id="sdWa" class="text-sm font-semibold">-</p></div>
+        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-slate-500 uppercase font-bold mb-0.5">Lokasi Publik</p><p id="sdCity" class="text-sm font-semibold">-</p></div>
+        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-slate-500 uppercase font-bold mb-0.5">Kategori</p><p id="sdCat" class="text-sm font-semibold">-</p></div>
+        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-slate-500 uppercase font-bold mb-0.5">Pengalaman</p><p id="sdExp" class="text-sm font-semibold">-</p></div>
+        <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-slate-500 uppercase font-bold mb-0.5">Produk Pertama</p><p id="sdFirst" class="text-sm font-semibold">-</p></div>
+      </div>
+      <!-- Alamat lengkap (hanya admin yang lihat) -->
+      <div class="bg-red-500/10 border border-red-500/20 p-3 rounded-xl">
+        <p class="text-[10px] text-red-400 uppercase font-bold mb-1">🔒 Alamat Lengkap (Privat — Hanya Admin)</p>
+        <p id="sdAlamat" class="text-sm text-slate-300">-</p>
+      </div>
+      <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Deskripsi Toko</p><p id="sdDesc" class="text-sm text-slate-300 leading-relaxed">-</p></div>
+      <div class="bg-white/5 p-3 rounded-xl"><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Catatan untuk Admin</p><p id="sdNotes" class="text-sm text-slate-300">-</p></div>
+      <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+        <p class="text-[10px] text-blue-400 font-bold uppercase mb-2">Teks Persetujuan (salin & kirim via WA)</p>
+        <p id="sdApprovalText" class="text-xs text-blue-200 leading-relaxed select-all">-</p>
+        <button onclick="copyApprovalText()" class="btn btn-ghost text-xs mt-2"><i class="fas fa-copy"></i> Salin Teks</button>
+      </div>
+      <div id="sdActions" class="flex gap-3 flex-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- KONFIRMASI BERBAHAYA -->
+<div id="mConfirm" class="overlay">
+  <div class="modal p-8">
+    <div class="text-center mb-6">
+      <div id="confirmIcon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><i id="confirmIconI" class="fas fa-exclamation-triangle text-2xl"></i></div>
+      <h2 id="confirmTitle" class="text-xl font-extrabold syne mb-2">Konfirmasi Aksi</h2>
+      <p id="confirmDesc" class="text-slate-400 text-sm leading-relaxed">-</p>
+    </div>
+    <div class="mb-4">
+      <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Alasan <span class="text-red-400">*</span></label>
+      <textarea id="confirmReason" class="inp" rows="2" placeholder="Wajib isi alasan..."></textarea>
+    </div>
+    <div class="mb-5">
+      <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Kode Konfirmasi Admin <span class="text-red-400">*</span></label>
+      <input id="confirmCode" type="text" class="inp" style="letter-spacing:.3em;font-size:1.1rem;font-weight:800;text-align:center" placeholder="Kode admin">
+    </div>
+    <div class="flex gap-3">
+      <button onclick="closeM('mConfirm')" class="btn btn-ghost flex-1 justify-center">Batal</button>
+      <button id="confirmBtn" class="btn btn-red flex-1 justify-center">Konfirmasi</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAMBAH ORDER MANUAL -->
+<div id="mAddOrder" class="overlay">
+  <div class="modal p-7">
+    <button onclick="closeM('mAddOrder')" class="absolute top-4 right-4 w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition"><i class="fas fa-times text-sm"></i></button>
+    <h2 class="text-xl font-extrabold syne mb-5">Tambah Order Manual</h2>
+    <div class="space-y-3">
+      <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">UID Pembeli <span class="text-red-400">*</span></label><input id="ord_uid" type="text" class="inp" placeholder="UID dari Firebase"></div>
+      <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">ID Produk <span class="text-red-400">*</span></label><input id="ord_pid" type="text" class="inp" placeholder="ID produk"></div>
+      <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Nama Produk <span class="text-red-400">*</span></label><input id="ord_pname" type="text" class="inp" placeholder="Nama produk"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Total Harga</label><input id="ord_price" type="number" class="inp" placeholder="0"></div>
+        <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Status</label>
+          <select id="ord_status" class="inp">
+            <option value="pending">Pending</option><option value="confirmed">Terkonfirmasi</option>
+            <option value="processing">Diproses</option><option value="completed">Selesai</option>
+          </select>
+        </div>
+      </div>
+      <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Nama Toko</label><input id="ord_store" type="text" class="inp" placeholder="Nama seller/toko"></div>
+    </div>
+    <button onclick="submitOrder()" class="btn btn-blue w-full justify-center mt-5"><i class="fas fa-plus"></i> Tambah Order</button>
+  </div>
+</div>
+
+<!-- EDIT PRODUK -->
+<div id="mEditProd" class="overlay">
+  <div class="modal p-7">
+    <button onclick="closeM('mEditProd')" class="absolute top-4 right-4 w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition"><i class="fas fa-times text-sm"></i></button>
+    <h2 class="text-xl font-extrabold syne mb-5">Edit Produk</h2>
+    <input type="hidden" id="ep_id">
+    <div class="space-y-3">
+      <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Nama Produk</label><input id="ep_name" type="text" class="inp"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Harga (Rp)</label><input id="ep_price" type="number" class="inp"></div>
+        <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Stok</label><input id="ep_stock" type="number" class="inp"></div>
+      </div>
+      <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Kategori</label><input id="ep_cat" type="text" class="inp"></div>
+      <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Deskripsi</label><textarea id="ep_desc" class="inp" rows="3"></textarea></div>
+    </div>
+    <button onclick="saveProduct()" class="btn btn-blue w-full justify-center mt-5"><i class="fas fa-save"></i> Simpan Perubahan</button>
+  </div>
+</div>
+
+<!-- UPDATE STATUS ORDER -->
+<div id="mOrderStatus" class="overlay">
+  <div class="modal p-7">
+    <button onclick="closeM('mOrderStatus')" class="absolute top-4 right-4 w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition"><i class="fas fa-times text-sm"></i></button>
+    <h2 class="text-xl font-extrabold syne mb-2">Update Status Order</h2>
+    <p id="osOrderId" class="text-slate-500 text-xs mb-5">ID: -</p>
+    <input type="hidden" id="os_uid"><input type="hidden" id="os_oid">
+    <select id="os_status" class="inp mb-3">
+      <option value="pending">⏳ Menunggu Konfirmasi</option>
+      <option value="confirmed">✅ Terkonfirmasi</option>
+      <option value="payment">💳 Menunggu Pembayaran</option>
+      <option value="processing">🔄 Sedang Diproses</option>
+      <option value="shipped">📦 Dikirim / Dikirimkan</option>
+      <option value="completed">🎉 Selesai</option>
+      <option value="cancelled">❌ Dibatalkan</option>
+    </select>
+    <div id="cancelReasonWrap" class="hidden mb-3">
+      <label class="text-xs text-slate-400 font-bold uppercase mb-1.5 block">Alasan Pembatalan</label>
+      <textarea id="os_cancelReason" class="inp" rows="2" placeholder="Tulis alasan..."></textarea>
+    </div>
+    <button onclick="saveOrderStatus()" class="btn btn-blue w-full justify-center"><i class="fas fa-check"></i> Update Status</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getDatabase, ref, onValue, set, get, remove, update, push } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+// ─── FIREBASE CONFIG ───
+const FB = {
+    apiKey:"AIzaSyCAx7IrTxMKZVzr_joabmtObr_gneXi0EE",
+    authDomain:"marketplace-xrezzkystore.firebaseapp.com",
+    databaseURL:"https://marketplace-xrezzkystore-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:"marketplace-xrezzkystore",
+    storageBucket:"marketplace-xrezzkystore.firebasestorage.app",
+    messagingSenderId:"522386534166",
+    appId:"1:522386534166:web:a80a8b4e8ce5296beeea37",
+    measurementId:"G-4LN8PZYF2C"
+};
+const app  = initializeApp(FB);
+const auth = getAuth(app);
+const db   = getDatabase(app);
+
+// ─── STATE ───
+let adminUser    = null;
+let allProducts  = {};
+let allUsers     = {};
+let allSellers   = {};
+let allOrders    = {};
+let siteConfig   = {};
+let adminCode    = 'admin123';
+let tickerItems  = [];
+let featureItems = [];
+let categories   = [];
+let pendingAction = null;
+
+// ─── UTILS ───
+const $ = id => document.getElementById(id);
+let toastTmr;
+window.toast = (t, m, type='success') => {
+    const map = {
+        success:{bg:'bg-green-500/20',cl:'text-green-400',i:'fa-check-circle'},
+        error:  {bg:'bg-red-500/20',  cl:'text-red-400',  i:'fa-times-circle'},
+        info:   {bg:'bg-blue-500/20', cl:'text-blue-400', i:'fa-info-circle'},
+        warning:{bg:'bg-yellow-500/20',cl:'text-yellow-400',i:'fa-exclamation-circle'}
+    };
+    const c = map[type]||map.info;
+    $('toastT').textContent = t;
+    $('toastM').textContent = m;
+    $('toastIco').className = `w-8 h-8 rounded-full ${c.bg} flex items-center justify-center ${c.cl} shrink-0`;
+    $('toastIco').innerHTML = `<i class="fas ${c.i} text-sm"></i>`;
+    const el = $('toast'); el.style.transform = 'translateX(0)';
+    if (toastTmr) clearTimeout(toastTmr);
+    toastTmr = setTimeout(() => el.style.transform = 'translateX(150%)', 4500);
+};
+window.openM  = id => { const e=$(id); if(e){e.style.display='flex';document.body.style.overflow='hidden';} };
+window.closeM = id => { const e=$(id); if(e){e.style.display='none'; document.body.style.overflow='auto';} };
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o){o.style.display='none';document.body.style.overflow='auto';} }));
+
+// ─── TOGGLE PASSWORD ───
+window.togglePass = () => {
+    const inp = $('lockPass');
+    const eye = $('passEye');
+    inp.type = inp.type==='password' ? 'text' : 'password';
+    eye.className = inp.type==='password' ? 'fas fa-eye text-sm' : 'fas fa-eye-slash text-sm';
+};
+
+// ─── AUTH ───
+window.doAdminLogin = async () => {
+    const email = $('lockEmail').value.trim();
+    const pass  = $('lockPass').value;
+    const errEl = $('lockErr');
+    const btn   = $('loginBtn');
+    errEl.classList.add('hidden');
+
+    if (!email || !pass) {
+        errEl.textContent = 'Email dan password wajib diisi!';
+        errEl.classList.remove('hidden');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Memverifikasi...';
+
+    try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        // onAuthStateChanged yang handle selanjutnya
+    } catch(e) {
+        const msg = e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
+            ? 'Email atau password salah!' : 'Gagal login. Coba lagi.';
+        errEl.textContent = msg;
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk ke Admin Panel';
+    }
+};
+
+window.doLogout = () => {
+    if (!confirm('Yakin keluar dari admin panel?')) return;
+    signOut(auth).then(() => location.reload());
+};
+
+// ─── AUTH STATE LISTENER ───
+// Ini yang jadi pusat — cek role, tampilkan panel atau tolak
+onAuthStateChanged(auth, async (user) => {
+    const lockScreen  = $('lockScreen');
+    const authLoading = $('authLoading');
+    const loginBtn    = $('loginBtn');
+
+    if (!user) {
+        // Tidak ada user → tampilkan lock screen
+        authLoading.classList.remove('show');
+        lockScreen.classList.remove('hide');
+        if (loginBtn) { loginBtn.disabled = false; loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk ke Admin Panel'; }
+        return;
+    }
+
+    // Ada user → cek role dulu
+    authLoading.classList.add('show');
+    lockScreen.classList.add('hide');
+    $('authLoadingMsg').textContent = 'Memverifikasi role admin...';
+
+    try {
+        const snapU = await get(ref(db, `users/${user.uid}`));
+        const userData = snapU.exists() ? snapU.val() : {};
+
+        if (!snapU.exists() || userData.role !== 'admin') {
+            // Bukan admin → tolak & logout
+            $('authLoadingMsg').textContent = 'Akses ditolak. Mengalihkan...';
+            toast('Akses Ditolak ⛔', 'Akun ini tidak memiliki role admin!', 'error');
+            setTimeout(async () => {
+                await signOut(auth);
+                authLoading.classList.remove('show');
+                lockScreen.classList.remove('hide');
+                const errEl = $('lockErr');
+                errEl.textContent = 'Akun ini tidak memiliki role admin!';
+                errEl.classList.remove('hidden');
+                if (loginBtn) { loginBtn.disabled = false; loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk ke Admin Panel'; }
+            }, 2000);
+            return;
+        }
+
+        // ✅ Role admin OK → masuk panel
+        adminUser = user;
+        authLoading.classList.remove('show');
+
+        $('adminName').textContent  = user.displayName || userData.name || 'Admin';
+        $('adminEmail').textContent = user.email;
+        $('adminAvatar').textContent = (user.displayName || userData.name || 'A').charAt(0).toUpperCase();
+        $('dashDate').textContent   = new Date().toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+        initAdminData();
+
+    } catch(err) {
+        // Error database (mungkin rules belum sesuai)
+        $('authLoadingMsg').textContent = 'Gagal verifikasi: ' + err.message;
+        toast('Error', 'Gagal membaca data user: ' + err.message, 'error');
+        setTimeout(() => {
+            authLoading.classList.remove('show');
+            lockScreen.classList.remove('hide');
+            if (loginBtn) { loginBtn.disabled = false; loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk ke Admin Panel'; }
+        }, 3000);
+    }
+});
+
+// ─── INIT DATA REALTIME ───
+const initAdminData = () => {
+    // Kode admin
+    onValue(ref(db, 'admin/config/adminCode'), snap => {
+        adminCode = snap.exists() ? snap.val() : 'admin123';
+        if ($('currentCode')) $('currentCode').textContent = adminCode;
+    });
+
+    // Site config
+    onValue(ref(db, 'admin/config/site'), snap => {
+        siteConfig = snap.exists() ? snap.val() : {};
+    });
+
+    // Produk
+    onValue(ref(db, 'products'), snap => {
+        allProducts = snap.val() || {};
+        updateStats();
+        renderProducts();
+        renderDashProducts();
+        renderAnalytics();
+    });
+
+    // Users
+    onValue(ref(db, 'users'), snap => {
+        allUsers = snap.val() || {};
+        updateStats();
+        renderBuyers();
+        renderAnalytics();
+        renderAdminList();
+    });
+
+    // Seller applications
+    onValue(ref(db, 'seller_applications'), snap => {
+        allSellers = snap.val() || {};
+        updateStats();
+        renderSellers();
+        renderDashPending();
+        renderAnalytics();
+        const pending = Object.values(allSellers).filter(s => s.status==='pending').length;
+        const pb = $('pendingBadge');
+        if (pb) { pb.textContent = pending; pb.classList.toggle('hidden', pending===0); }
+    });
+
+    // Orders
+    onValue(ref(db, 'orders'), snap => {
+        allOrders = snap.val() || {};
+        updateStats();
+        renderOrders();
+        renderDashOrders();
+    });
+
+    // Activity log
+    onValue(ref(db, 'admin/logs'), snap => {
+        const logs  = snap.val() || {};
+        const logEl = $('activityLog');
+        if (!logEl) return;
+        logEl.innerHTML = '';
+        const sorted = Object.values(logs).sort((a,b) => b.ts - a.ts).slice(0, 50);
+        if (sorted.length === 0) { logEl.innerHTML = '<p class="text-slate-600 text-xs text-center py-8">Belum ada log aktivitas</p>'; return; }
+        sorted.forEach(l => {
+            const d = new Date(l.ts).toLocaleString('id-ID');
+            const div = document.createElement('div');
+            div.className = 'bg-white/3 border border-white/5 rounded-xl p-3 flex items-start gap-3 mb-2';
+            div.innerHTML = `<div class="w-7 h-7 rounded-full bg-${l.color||'blue'}-500/20 flex items-center justify-center shrink-0 mt-0.5"><i class="fas fa-${l.icon||'circle-info'} text-${l.color||'blue'}-400 text-xs"></i></div><div class="flex-1 min-w-0"><p class="text-xs font-bold">${l.action}</p><p class="text-[10px] text-slate-500">${l.detail||''}</p><p class="text-[9px] text-slate-600 mt-0.5">${d} · ${l.admin||'System'}</p></div>`;
+            logEl.appendChild(div);
+        });
+    });
+
+    // Announcements
+    onValue(ref(db, 'announcements'), snap => {
+        const data = snap.val() || {};
+        const el = $('annList');
+        if (!el) return;
+        el.innerHTML = '';
+        const sorted = Object.entries(data).sort(([,a],[,b]) => b.createdAt - a.createdAt);
+        if (sorted.length === 0) { el.innerHTML = '<p class="text-slate-600 text-xs text-center py-6">Belum ada pengumuman</p>'; return; }
+        const typeMap = { info:'bg-blue-500/10 border-blue-500/30 text-blue-400', warning:'bg-yellow-500/10 border-yellow-500/30 text-yellow-400', success:'bg-green-500/10 border-green-500/30 text-green-400', error:'bg-red-500/10 border-red-500/30 text-red-400' };
+        sorted.forEach(([id, a]) => {
+            const cls = typeMap[a.type] || typeMap.info;
+            const div = document.createElement('div');
+            div.className = `announcement-item border ${cls}`;
+            div.innerHTML = `<div class="flex items-start justify-between gap-3"><div class="flex-1 min-w-0"><p class="font-bold text-sm mb-1">${a.title}</p><p class="text-xs text-slate-400 leading-relaxed">${a.body}</p><p class="text-[10px] text-slate-600 mt-2">Target: ${a.target==='all'?'Semua':a.target} · ${new Date(a.createdAt).toLocaleString('id-ID')}</p></div><button onclick="deleteAnn('${id}')" class="text-red-400 hover:text-red-300 shrink-0 transition"><i class="fas fa-times text-xs"></i></button></div>`;
+            el.appendChild(div);
+        });
+    });
+};
+
+const logAction = (action, detail, color='blue', icon='circle-info') => {
+    push(ref(db, 'admin/logs'), { action, detail, color, icon, ts: Date.now(), admin: adminUser?.email || 'Admin' });
+};
+
+// ─── STATS ───
+const updateStats = () => {
+    const prods    = Object.keys(allProducts).length;
+    const approved = Object.values(allSellers).filter(s => s.status==='approved').length;
+    const pending  = Object.values(allSellers).filter(s => s.status==='pending').length;
+    const pelanggan = Object.values(allUsers).filter(u => u.role !== 'admin').length;
+
+    let orders = 0;
+    Object.values(allOrders).forEach(u => orders += Object.keys(u||{}).length);
+
+    let rSum = 0, rCnt = 0, totalSold = 0;
+    Object.values(allProducts).forEach(p => {
+        if (p.rating && p.ratingCount) { rSum += parseFloat(p.rating)*Number(p.ratingCount); rCnt += Number(p.ratingCount); }
+        totalSold += Number(p.sold || 0);
+    });
+    const globalRating = rCnt > 0 ? (rSum/rCnt).toFixed(1) : '-';
+
+    if($('st-pelanggan')) $('st-pelanggan').textContent = pelanggan;
+    if($('st-products'))  $('st-products').textContent  = prods;
+    if($('st-stores'))    $('st-stores').textContent    = approved;
+    if($('st-pending'))   $('st-pending').textContent   = pending;
+    if($('st-orders'))    $('st-orders').textContent    = orders;
+    if($('st-rating'))    $('st-rating').textContent    = globalRating !== '-' ? `${globalRating}★` : '-';
+    if($('st-reviews'))   $('st-reviews').textContent   = rCnt;
+    if($('st-sold'))      $('st-sold').textContent      = totalSold;
+
+    // Simpan ke Firebase agar marketplace bisa baca realtime
+    update(ref(db, 'settings/globalStats'), {
+        totalPelanggan: pelanggan, totalProduk: prods, totalToko: approved,
+        totalOrder: orders, ratingGlobal: globalRating, totalUlasan: rCnt,
+        totalTerjual: totalSold, updatedAt: Date.now()
+    }).catch(() => {});
+};
+
+// ─── NAVIGATION ───
+const SECTION_LABELS = { dashboard:'Dashboard', analytics:'Analitik', marketplace:'Pengaturan', products:'Semua Produk', categories:'Kategori', orders:'Kelola Order', announcements:'Pengumuman', sellers:'Seller', buyers:'Pelanggan', roles:'Kelola Role', logs:'Log Aktivitas', security:'Keamanan' };
+window.go = (name) => {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const sec = $(`sec-${name}`);
+    if (sec) sec.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => { if(n.textContent.trim().startsWith(SECTION_LABELS[name]||'__')) n.classList.add('active'); });
+    if (name==='marketplace') loadConfigToForm();
+    if (name==='sellers')     renderSellers();
+    if (name==='buyers')      renderBuyers();
+    if (name==='products')    renderProducts();
+    if (name==='orders')      renderOrders();
+    if (name==='analytics')   renderAnalytics();
+    if (name==='roles')       { searchUserForRole(''); renderAdminList(); }
+    window.scrollTo({ top:0 });
+};
+
+// ─── DASHBOARD ───
+const renderDashPending = () => {
+    const el = $('dashPending'); if(!el) return;
+    const list = Object.entries(allSellers).filter(([,s]) => s.status==='pending');
+    if (list.length===0) { el.innerHTML='<p class="text-slate-600 text-xs text-center py-6">Tidak ada pendaftaran pending</p>'; return; }
+    el.innerHTML = '';
+    list.slice(0,4).forEach(([uid,s]) => {
+        const dt = s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('id-ID') : '-';
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 bg-white/3 rounded-xl mb-2 hover:bg-white/5 transition cursor-pointer';
+        div.onclick = () => openSellerDetail(uid);
+        div.innerHTML = `<div class="w-9 h-9 rounded-full bg-blue-600/30 flex items-center justify-center font-bold text-sm shrink-0">${(s.storeName||'S').charAt(0)}</div><div class="flex-1 min-w-0"><p class="text-sm font-bold truncate">${s.storeName||'-'}</p><p class="text-xs text-slate-500">${s.ownerName||'-'} · ${dt}</p></div><span class="badge badge-pending shrink-0">Pending</span>`;
+        el.appendChild(div);
+    });
+};
+
+const renderDashProducts = () => {
+    const el = $('dashProducts'); if(!el) return;
+    const list = Object.entries(allProducts).sort(([,a],[,b]) => (b.createdAt||0)-(a.createdAt||0)).slice(0,5);
+    if (list.length===0) { el.innerHTML='<p class="text-slate-600 text-xs text-center py-6">Belum ada produk</p>'; return; }
+    el.innerHTML = '';
+    list.forEach(([id,p]) => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 bg-white/3 rounded-xl mb-2 cursor-pointer hover:bg-white/5 transition';
+        div.onclick = () => { go('products'); };
+        div.innerHTML = `<img src="${p.images?.[0]||'https://placehold.co/40x40/0f172a/3b82f6?text=P'}" class="w-10 h-10 rounded-lg object-cover shrink-0"><div class="flex-1 min-w-0"><p class="text-sm font-bold truncate">${p.name||'-'}</p><p class="text-xs text-slate-500">${p.category||'-'} · Stok: ${p.stock??'-'}</p></div><span class="text-sm font-bold text-blue-400">Rp ${Number(p.price||0).toLocaleString('id-ID')}</span>`;
+        el.appendChild(div);
+    });
+};
+
+const renderDashOrders = () => {
+    const el = $('dashOrders'); if(!el) return;
+    const statusMap = { pending:'badge-pending', confirmed:'badge-approved', payment:'badge-pending', processing:'badge-buyer', shipped:'badge-seller', completed:'badge-approved', cancelled:'badge-rejected' };
+    const labelMap  = { pending:'Pending', confirmed:'Konfirmasi', payment:'Bayar', processing:'Proses', shipped:'Kirim', completed:'Selesai', cancelled:'Batal' };
+    let count = 0;
+    el.innerHTML = '';
+    const allOrdFlat = [];
+    Object.entries(allOrders).forEach(([uid, uOrds]) => {
+        if (!uOrds) return;
+        Object.entries(uOrds).forEach(([oid, o]) => allOrdFlat.push({uid, oid, ...o}));
+    });
+    allOrdFlat.sort((a,b) => b.createdAt - a.createdAt).slice(0,5).forEach(o => {
+        count++;
+        const u  = allUsers[o.uid];
+        const dt = o.createdAt ? new Date(o.createdAt).toLocaleDateString('id-ID') : '-';
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 bg-white/3 rounded-xl mb-2 cursor-pointer hover:bg-white/5 transition';
+        div.onclick   = () => go('orders');
+        div.innerHTML = `<div class="flex-1 min-w-0"><p class="text-sm font-bold truncate">${o.productName||'-'}</p><p class="text-xs text-slate-500">${u?.name||'User'} · ${dt}</p></div><span class="badge ${statusMap[o.status||'pending']}">${labelMap[o.status||'pending']}</span>`;
+        el.appendChild(div);
+    });
+    if (count===0) el.innerHTML = '<p class="text-slate-600 text-xs text-center py-6">Belum ada order</p>';
+};
+
+// ─── ANALYTICS ───
+const renderAnalytics = () => {
+    const el = $('userDistChart'); if(!el) return;
+    const buyers    = Object.values(allUsers).filter(u => u.role==='buyer'||!u.role).length;
+    const sellers   = Object.values(allUsers).filter(u => u.role==='seller').length;
+    const admins    = Object.values(allUsers).filter(u => u.role==='admin').length;
+    const pelanggan = buyers + sellers;
+    const total     = Object.keys(allUsers).length || 1;
+    el.innerHTML = `
+        <div class="space-y-3 mb-4">
+            <div><div class="flex justify-between text-xs mb-1"><span class="text-blue-400 font-bold">Pembeli (Buyer)</span><span class="font-bold">${buyers}</span></div><div class="h-2 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full" style="width:${Math.round(buyers/total*100)}%"></div></div></div>
+            <div><div class="flex justify-between text-xs mb-1"><span class="text-green-400 font-bold">Seller Aktif</span><span class="font-bold">${sellers}</span></div><div class="h-2 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-green-500 rounded-full" style="width:${Math.round(sellers/total*100)}%"></div></div></div>
+            <div><div class="flex justify-between text-xs mb-1"><span class="text-red-400 font-bold">Admin</span><span class="font-bold">${admins}</span></div><div class="h-2 bg-white/10 rounded-full overflow-hidden"><div class="h-full bg-red-500 rounded-full" style="width:${Math.round(admins/total*100)}%"></div></div></div>
+        </div>
+        <div class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-center">
+            <p class="text-blue-300 font-extrabold text-2xl syne">${pelanggan}</p>
+            <p class="text-[10px] text-slate-400 font-bold uppercase">Total Pelanggan (non-admin)</p>
+        </div>`;
+
+    const trEl   = $('topRatedList'); if(!trEl) return;
+    const sorted = Object.entries(allProducts).filter(([,p]) => p.rating).sort(([,a],[,b]) => parseFloat(b.rating)-parseFloat(a.rating)).slice(0,5);
+    if (sorted.length===0) { trEl.innerHTML='<p class="text-slate-600 text-xs text-center py-4">Belum ada produk dengan rating</p>'; }
+    else {
+        trEl.innerHTML = '';
+        sorted.forEach(([id,p],i) => {
+            const sel = Object.values(allSellers).find(s=>s.uid===p.sellerId);
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-3 p-2 rounded-xl mb-1.5 bg-white/3';
+            div.innerHTML = `<span class="text-base font-extrabold syne text-slate-600 w-5 shrink-0">${i+1}</span><img src="${p.images?.[0]||'https://placehold.co/32x32/0f172a/3b82f6?text=P'}" class="w-8 h-8 rounded-lg object-cover shrink-0"><div class="flex-1 min-w-0"><p class="text-xs font-bold truncate">${p.name}</p><p class="text-[9px] text-slate-500">${sel?.storeName||'XREZZKY'} · ${p.ratingCount||0} ulasan</p></div><span class="text-yellow-400 text-xs font-bold">★ ${p.rating}</span>`;
+            trEl.appendChild(div);
+        });
+    }
+
+    const spEl  = $('storePerf'); if(!spEl) return;
+    const stLst = Object.values(allSellers).filter(s => s.status==='approved');
+    if (stLst.length===0) { spEl.innerHTML='<p class="text-slate-600 text-xs text-center py-4">Belum ada toko aktif</p>'; return; }
+    spEl.innerHTML = `<table class="tbl"><thead><tr><th>Toko</th><th>Produk</th><th>Stok</th><th>Terjual</th><th>Rating</th><th>Ulasan</th><th>Lokasi</th></tr></thead><tbody>${
+        stLst.map(s => {
+            const prds  = Object.values(allProducts).filter(p => p.sellerId===s.uid);
+            const stk   = prds.reduce((a,p) => a+Number(p.stock||0), 0);
+            const sold  = prds.reduce((a,p) => a+Number(p.sold||0), 0);
+            const uls   = prds.reduce((a,p) => a+Number(p.ratingCount||0), 0);
+            let rs=0, rc=0; prds.forEach(p => { if(p.rating&&p.ratingCount){rs+=parseFloat(p.rating)*p.ratingCount;rc+=p.ratingCount;} });
+            const avg = rc>0?(rs/rc).toFixed(1):'-';
+            const loc = s.provinsi&&s.kabkota?`${s.provinsi}/${s.kabkota}`:(s.city||'-');
+            return `<tr><td><p class="font-bold text-xs">${s.storeName||'-'}</p><p class="text-[9px] text-slate-500">${s.ownerName||''}</p></td><td>${prds.length}</td><td>${stk}</td><td class="text-cyan-400 font-bold">${sold}</td><td>${avg!=='-'?`<span class="text-yellow-400 font-bold">★ ${avg}</span>`:'-'}</td><td class="text-purple-300">${uls}</td><td class="text-slate-500 text-xs">${loc}</td></tr>`;
+        }).join('')
+    }</tbody></table>`;
+};
+
+// ─── PRODUCTS ───
+window.renderProducts = (q='') => {
+    const body = $('prodBody'); if(!body) return;
+    body.innerHTML = '';
+    const search = (q || $('prodSearch')?.value || '').toLowerCase();
+    const list = Object.entries(allProducts).filter(([,p]) => !search || (p.name||'').toLowerCase().includes(search) || (p.category||'').toLowerCase().includes(search));
+    if (list.length===0) { body.innerHTML=`<tr><td colspan="8" class="text-center py-8 text-slate-600">Tidak ada produk</td></tr>`; return; }
+    list.forEach(([id,p]) => {
+        const seller = Object.values(allSellers).find(s=>s.uid===p.sellerId);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><div class="flex items-center gap-2"><img src="${p.images?.[0]||'https://placehold.co/32x32/0f172a/3b82f6?text=P'}" class="w-8 h-8 rounded-lg object-cover shrink-0"><span class="font-semibold text-xs">${p.name||'-'}</span></div></td>
+            <td><span class="badge badge-buyer">${p.category||'-'}</span></td>
+            <td class="font-bold text-blue-400 text-xs">Rp ${Number(p.price||0).toLocaleString('id-ID')}</td>
+            <td class="text-xs ${Number(p.stock)<=0?'text-red-400':Number(p.stock)<5?'text-yellow-400':'text-green-400'} font-bold">${p.stock??'-'}</td>
+            <td class="text-cyan-400 text-xs font-bold">${p.sold||0}</td>
+            <td class="text-xs">${p.rating?`<span class="text-yellow-400 font-bold">★ ${p.rating}</span>`:'<span class="text-slate-600">-</span>'}</td>
+            <td class="text-xs text-slate-400">${seller?.storeName||p.sellerName||'XREZZKY'}</td>
+            <td><div class="flex gap-1">
+                <button onclick="openEditProd('${id}')" class="btn btn-ghost text-xs py-1.5 px-2"><i class="fas fa-edit"></i></button>
+                <button onclick="triggerDeleteProd('${id}','${(p.name||'').replace(/'/g,"\\'")}')" class="btn btn-red text-xs py-1.5 px-2"><i class="fas fa-trash"></i></button>
+            </div></td>`;
+        body.appendChild(tr);
+    });
+};
+window.openEditProd = id => {
+    const p = allProducts[id]; if(!p) return;
+    $('ep_id').value = id; $('ep_name').value = p.name||''; $('ep_price').value = p.price||0;
+    $('ep_stock').value = p.stock||0; $('ep_cat').value = p.category||''; $('ep_desc').value = p.description||'';
+    openM('mEditProd');
+};
+window.saveProduct = async () => {
+    const id = $('ep_id').value;
+    const upd = { name:$('ep_name').value.trim(), price:Number($('ep_price').value), stock:Number($('ep_stock').value), category:$('ep_cat').value.trim(), description:$('ep_desc').value.trim() };
+    try { await update(ref(db,`products/${id}`),upd); closeM('mEditProd'); toast('Berhasil!','Produk berhasil diupdate'); logAction('Edit Produk',`"${upd.name}" diupdate`,'blue','edit'); }
+    catch(e) { toast('Gagal',e.message,'error'); }
+};
+window.triggerDeleteProd = (id, name) => {
+    pendingAction = async (reason) => {
+        await remove(ref(db,`products/${id}`));
+        logAction('Hapus Produk',`"${name}" dihapus. Alasan: ${reason}`,'red','trash');
+        toast('Terhapus',`Produk "${name}" berhasil dihapus!`,'warning');
+    };
+    openConfirmModal('Hapus Produk',`Kamu akan menghapus "<strong>${name}</strong>" secara permanen.`,'red','trash-alt');
+};
+
+// ─── SELLERS ───
+window.renderSellers = () => {
+    const filter = $('sellerFilter')?.value || 'all';
+    const el = $('sellerCards'); if(!el) return;
+    el.innerHTML = '';
+    const list = Object.entries(allSellers).filter(([,s]) => filter==='all' || s.status===filter);
+    if (list.length===0) { el.innerHTML=`<div class="col-span-full text-center py-12 text-slate-600"><i class="fas fa-store text-4xl mb-3 opacity-30"></i><p>Tidak ada seller</p></div>`; return; }
+    list.forEach(([uid,s]) => {
+        const prods = Object.values(allProducts).filter(p => p.sellerId===uid).length;
+        const card  = document.createElement('div');
+        card.className = 'card cursor-pointer hover:border-blue-500/40 transition';
+        card.onclick   = () => openSellerDetail(uid);
+        card.innerHTML = `
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-lg font-bold shrink-0">${(s.storeName||'S').charAt(0)}</div>
+                <div class="flex-1 min-w-0"><p class="font-bold truncate">${s.storeName||'-'}</p><p class="text-xs text-slate-500 truncate">${s.ownerName||'-'}</p></div>
+                <span class="badge badge-${s.status||'pending'} shrink-0">${{pending:'Pending',approved:'Aktif',rejected:'Ditolak',banned:'Banned'}[s.status||'pending']}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-[10px] mb-2">
+                <div class="bg-white/5 py-1.5 rounded-lg"><p class="font-bold">${prods}</p><p class="text-slate-500">Produk</p></div>
+                <div class="bg-white/5 py-1.5 rounded-lg"><p class="font-bold truncate text-[9px]">${s.category||'-'}</p><p class="text-slate-500">Kategori</p></div>
+                <div class="bg-white/5 py-1.5 rounded-lg"><p class="font-bold truncate text-[9px]">${s.city||(s.provinsi&&s.kabkota?s.kabkota:'-')}</p><p class="text-slate-500">Lokasi</p></div>
+            </div>
+            <p class="text-[10px] text-slate-600">${s.submittedAt?new Date(s.submittedAt).toLocaleDateString('id-ID'):'-'}</p>`;
+        el.appendChild(card);
+    });
+};
+window.openSellerDetail = uid => {
+    const s = allSellers[uid]; if(!s) return;
+    $('sdAvatar').textContent     = (s.storeName||'S').charAt(0).toUpperCase();
+    $('sdStoreName').textContent  = s.storeName||'-';
+    $('sdOwner').textContent      = `oleh ${s.ownerName||'-'}`;
+    $('sdEmail').textContent      = s.email||'-';
+    $('sdWa').textContent         = s.whatsapp||'-';
+    $('sdCity').textContent       = s.city||(s.provinsi&&s.kabkota?`${s.provinsi} / ${s.kabkota}`:'') || '-';
+    $('sdCat').textContent        = s.category||'-';
+    $('sdExp').textContent        = s.experience||'-';
+    $('sdFirst').textContent      = s.firstProduct||'-';
+    $('sdDesc').textContent       = s.storeDesc||'-';
+    $('sdNotes').textContent      = s.notes||'-';
+    // Tampilkan alamat lengkap (privat, hanya admin)
+    const alamat = [s.kecamatan, s.kabkota, s.provinsi, s.pulau, s.alamatLengkap].filter(Boolean).join(' — ');
+    $('sdAlamat').textContent = alamat || '-';
+    const statusBadge = {pending:'badge-pending',approved:'badge-approved',rejected:'badge-rejected',banned:'badge-banned'}[s.status||'pending'];
+    const statusLabel = {pending:'Pending',approved:'Approved',rejected:'Ditolak',banned:'Banned'}[s.status||'pending'];
+    $('sdStatusBadge').innerHTML = `<span class="badge ${statusBadge}">${statusLabel}</span>`;
+    const dt = new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const approvalText = `Halo ${s.ownerName||'Seller'},\n\nSelamat! Pendaftaran toko "${s.storeName}" kamu di XREZZKY OFFICIAL STORE telah kami verifikasi dan DISETUJUI ✅\n\nDetail Toko:\n• Nama Toko: ${s.storeName}\n• Kategori: ${s.category}\n• Status: SELLER AKTIF\n\nKamu sekarang bisa:\n✅ Mengakses Seller Dashboard\n✅ Menambahkan produk ke marketplace\n✅ Menerima pesanan dari pembeli\n\nTanggal Aktivasi: ${dt}\n\nSilakan login ke XREZZKY STORE dan buka Seller Dashboard untuk mulai berjualan!\n\nTerima kasih telah bergabung! 🚀\n— Tim XREZZKY OFFICIAL STORE`;
+    $('sdApprovalText').textContent = approvalText;
+    const actions = $('sdActions'); actions.innerHTML = '';
+    if (s.status==='pending') {
+        actions.innerHTML = `<button onclick="approveSeller('${uid}')" class="btn btn-green flex-1 justify-center"><i class="fas fa-check"></i> Setujui</button><button onclick="triggerRejectSeller('${uid}','${(s.storeName||'').replace(/'/g,"\\'")}','${uid}')" class="btn btn-red flex-1 justify-center"><i class="fas fa-times"></i> Tolak</button>`;
+    } else if (s.status==='approved') {
+        actions.innerHTML = `<button onclick="triggerBanStore('${uid}','${(s.storeName||'').replace(/'/g,"\\'")}')" class="btn btn-red flex-1 justify-center"><i class="fas fa-ban"></i> Ban Toko</button><button onclick="triggerDeleteStore('${uid}','${(s.storeName||'').replace(/'/g,"\\'")}')" class="btn btn-red flex-1 justify-center"><i class="fas fa-trash"></i> Hapus Toko</button>`;
+    } else if (s.status==='banned') {
+        actions.innerHTML = `<button onclick="unbanSeller('${uid}')" class="btn btn-green flex-1 justify-center"><i class="fas fa-unlock"></i> Unban Toko</button>`;
+    }
+    openM('mSellerDetail');
+};
+window.copyApprovalText = () => {
+    const text = $('sdApprovalText').textContent;
+    navigator.clipboard?.writeText(text).then(()=>toast('Disalin!','Teks persetujuan berhasil disalin')).catch(()=>{
+        const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Disalin!','Teks berhasil disalin');
+    });
+};
+window.approveSeller = async uid => {
+    const s = allSellers[uid]; if(!s) return;
+    try {
+        await update(ref(db,`seller_applications/${uid}`),{status:'approved',reviewedAt:Date.now()});
+        await update(ref(db,`users/${uid}`),{role:'seller',storeName:s.storeName,sellerStatus:'approved'});
+        closeM('mSellerDetail');
+        toast('Disetujui! ✅',`Toko "${s.storeName}" berhasil diaktifkan`);
+        logAction('Approve Seller',`"${s.storeName}" disetujui`,'green','check');
+    } catch(e){ toast('Gagal',e.message,'error'); }
+};
+window.unbanSeller = async uid => {
+    const s = allSellers[uid]; if(!s) return;
+    await update(ref(db,`seller_applications/${uid}`),{status:'approved',bannedAt:null,bannedReason:null});
+    await update(ref(db,`users/${uid}`),{role:'seller',banned:false,bannedReason:null});
+    closeM('mSellerDetail'); toast('Unban Berhasil',`"${s.storeName}" diaktifkan kembali`);
+    logAction('Unban Seller',`"${s.storeName}" diaktifkan`,'blue','unlock');
+};
+window.triggerRejectSeller = (uid, name) => {
+    pendingAction = async reason => {
+        await update(ref(db,`seller_applications/${uid}`),{status:'rejected',reviewedAt:Date.now(),rejectedReason:reason});
+        await update(ref(db,`users/${uid}`),{sellerStatus:'rejected'});
+        closeM('mSellerDetail'); toast('Ditolak',`"${name}" ditolak`,'warning');
+        logAction('Tolak Seller',`"${name}" ditolak. Alasan: ${reason}`,'yellow','times');
+    };
+    openConfirmModal('Tolak Pendaftaran',`Kamu akan menolak pendaftaran seller "<strong>${name}</strong>".`,'yellow','times-circle');
+};
+window.triggerBanStore = (uid, name) => {
+    pendingAction = async reason => {
+        await update(ref(db,`seller_applications/${uid}`),{status:'banned',bannedAt:Date.now(),bannedReason:reason});
+        await update(ref(db,`users/${uid}`),{role:'buyer',banned:true,bannedReason:reason});
+        closeM('mSellerDetail'); toast('Dibanned',`"${name}" dibanned`,'error');
+        logAction('Ban Toko',`"${name}" dibanned. Alasan: ${reason}`,'red','ban');
+    };
+    openConfirmModal('Ban Toko',`Kamu akan membanned toko "<strong>${name}</strong>" dan menghapus akses seller.`,'red','ban');
+};
+window.triggerDeleteStore = (uid, name) => {
+    pendingAction = async reason => {
+        await remove(ref(db,`seller_applications/${uid}`));
+        await update(ref(db,`users/${uid}`),{role:'buyer',sellerStatus:null,storeName:null,banned:false});
+        closeM('mSellerDetail'); toast('Dihapus',`"${name}" dihapus`,'error');
+        logAction('Hapus Toko',`"${name}" dihapus. Alasan: ${reason}`,'red','trash');
+    };
+    openConfirmModal('Hapus Toko',`Kamu akan menghapus toko "<strong>${name}</strong>" secara permanen.`,'red','trash-alt');
+};
+
+// ─── BUYERS / PELANGGAN ───
+window.renderBuyers = () => {
+    const body = $('buyerBody'); if(!body) return;
+    body.innerHTML = '';
+    const search     = ($('buyerSearch')?.value||'').toLowerCase();
+    const roleFilter = $('buyerRoleFilter')?.value||'all';
+    const list = Object.entries(allUsers).filter(([uid,u]) => {
+        const matchRole = roleFilter==='all' || (u.role||'buyer')===roleFilter;
+        const matchSearch = !search || (u.name||'').toLowerCase().includes(search) || (u.email||'').toLowerCase().includes(search);
+        return matchRole && matchSearch;
+    });
+    if (list.length===0) { body.innerHTML=`<tr><td colspan="6" class="text-center py-8 text-slate-600">Tidak ada user</td></tr>`; return; }
+    list.forEach(([uid,u]) => {
+        const roleMap = {admin:'badge-admin',seller:'badge-seller',buyer:'badge-buyer'};
+        const dt = u.createdAt ? new Date(u.createdAt).toLocaleDateString('id-ID') : '-';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="font-semibold text-sm">${u.name||'-'}</td>
+            <td class="text-xs text-slate-400">${u.email||'-'}</td>
+            <td><span class="badge ${roleMap[u.role||'buyer']||'badge-buyer'}">${u.role||'buyer'}</span></td>
+            <td>${u.banned?'<span class="badge badge-banned">Banned</span>':'<span class="text-green-400 text-xs font-bold">Aktif</span>'}</td>
+            <td class="text-xs text-slate-500">${dt}</td>
+            <td><div class="flex gap-1">
+                ${u.role!=='admin'?`<button onclick="triggerBanUser('${uid}','${(u.name||'').replace(/'/g,"\\'")}',${u.banned})" class="btn btn-${u.banned?'green':'yellow'} text-xs py-1.5 px-2"><i class="fas fa-${u.banned?'unlock':'ban'}"></i></button>`:''}
+                ${u.role!=='admin'?`<button onclick="triggerDeleteUser('${uid}','${(u.name||'').replace(/'/g,"\\'")}')" class="btn btn-red text-xs py-1.5 px-2"><i class="fas fa-trash"></i></button>`:'<span class="text-slate-700 text-xs">—</span>'}
+            </div></td>`;
+        body.appendChild(tr);
+    });
+};
+window.triggerBanUser = (uid, name, isBanned) => {
+    if (isBanned) {
+        update(ref(db,`users/${uid}`),{banned:false,bannedReason:null}).then(()=>{toast('Unban',`"${name}" diaktifkan kembali`);logAction('Unban User',`"${name}" diaktifkan`,'blue','unlock');});
+        return;
+    }
+    pendingAction = async reason => {
+        await update(ref(db,`users/${uid}`),{banned:true,bannedReason:reason});
+        toast('Dibanned',`"${name}" dibanned`,'warning');
+        logAction('Ban User',`"${name}" dibanned. Alasan: ${reason}`,'red','ban');
+    };
+    openConfirmModal('Ban Pengguna',`Kamu akan membanned "<strong>${name}</strong>".`,'red','ban');
+};
+window.triggerDeleteUser = (uid, name) => {
+    pendingAction = async reason => {
+        await remove(ref(db,`users/${uid}`));
+        toast('Dihapus',`"${name}" dihapus dari database`,'warning');
+        logAction('Hapus User',`"${name}" dihapus. Alasan: ${reason}`,'red','trash');
+    };
+    openConfirmModal('Hapus Pengguna',`Kamu akan menghapus data "<strong>${name}</strong>" dari database.`,'red','user-times');
+};
+
+// ─── KELOLA ROLE ───
+window.searchUserForRole = (q) => {
+    const el = $('roleSearchResults'); if(!el) return;
+    el.innerHTML = '';
+    if (!q || q.length < 2) return;
+    const search = q.toLowerCase();
+    const list = Object.entries(allUsers).filter(([,u]) => (u.name||'').toLowerCase().includes(search) || (u.email||'').toLowerCase().includes(search)).slice(0,8);
+    if (list.length===0) { el.innerHTML='<p class="text-slate-600 text-xs">User tidak ditemukan</p>'; return; }
+    list.forEach(([uid,u]) => {
+        const roleMap = {admin:'badge-admin',seller:'badge-seller',buyer:'badge-buyer'};
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5';
+        div.innerHTML = `
+            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center font-bold text-sm shrink-0">${(u.name||'U').charAt(0).toUpperCase()}</div>
+            <div class="flex-1 min-w-0"><p class="text-sm font-bold truncate">${u.name||'-'}</p><p class="text-xs text-slate-500 truncate">${u.email||'-'}</p></div>
+            <span class="badge ${roleMap[u.role||'buyer']}">${u.role||'buyer'}</span>
+            <select onchange="changeUserRole('${uid}','${(u.name||'').replace(/'/g,"\\'")}',this.value)" class="inp !w-28 !py-2 text-xs">
+                <option value="">Ubah...</option>
+                <option value="buyer">buyer</option>
+                <option value="seller">seller</option>
+                <option value="admin">admin</option>
+            </select>`;
+        el.appendChild(div);
+    });
+};
+window.changeUserRole = async (uid, name, newRole) => {
+    if (!newRole) return;
+    if (!confirm(`Ubah role "${name}" menjadi "${newRole}"?`)) return;
+    try {
+        await update(ref(db,`users/${uid}`), { role: newRole });
+        if (newRole !== 'seller') await update(ref(db,`users/${uid}`), { sellerStatus: null });
+        toast('Role Diubah! ✅', `"${name}" sekarang jadi ${newRole}`);
+        logAction('Ubah Role', `"${name}" → ${newRole}`, 'purple', 'user-shield');
+        searchUserForRole($('roleSearch')?.value || '');
+        renderAdminList();
+    } catch(e) { toast('Gagal', e.message, 'error'); }
+};
+const renderAdminList = () => {
+    const el = $('adminList'); if(!el) return;
+    const admins = Object.entries(allUsers).filter(([,u]) => u.role==='admin');
+    if (admins.length===0) { el.innerHTML='<p class="text-slate-600 text-xs text-center py-4">Belum ada admin lain</p>'; return; }
+    el.innerHTML = '';
+    admins.forEach(([uid,u]) => {
+        const isSelf = uid === adminUser?.uid;
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 bg-red-500/5 border border-red-500/15 rounded-xl mb-2';
+        div.innerHTML = `<div class="w-9 h-9 rounded-full bg-red-500/20 flex items-center justify-center font-bold text-sm text-red-400 shrink-0">${(u.name||'A').charAt(0).toUpperCase()}</div><div class="flex-1 min-w-0"><p class="text-sm font-bold truncate">${u.name||'-'} ${isSelf?'<span class="text-[10px] text-red-400">(Kamu)</span>':''}</p><p class="text-xs text-slate-500 truncate">${u.email||'-'}</p></div><span class="badge badge-admin">Admin</span>`;
+        el.appendChild(div);
+    });
+};
+
+// ─── ORDERS ───
+window.renderOrders = () => {
+    const body = $('orderBody'); if(!body) return;
+    body.innerHTML = '';
+    const statusFilter = $('orderStatusFilter')?.value || 'all';
+    const statusBadge  = { pending:'badge-pending', confirmed:'badge-approved', payment:'badge-pending', processing:'badge-buyer', shipped:'badge-seller', completed:'badge-approved', cancelled:'badge-rejected' };
+    const statusLabel  = { pending:'⏳ Pending', confirmed:'✅ Konfirmasi', payment:'💳 Bayar', processing:'🔄 Proses', shipped:'📦 Kirim', completed:'🎉 Selesai', cancelled:'❌ Batal' };
+    const allFlat = [];
+    Object.entries(allOrders).forEach(([uid,uOrds]) => {
+        if (!uOrds) return;
+        Object.entries(uOrds).forEach(([oid,o]) => allFlat.push({uid, oid, ...o}));
+    });
+    const filtered = statusFilter==='all' ? allFlat : allFlat.filter(o => o.status===statusFilter);
+    filtered.sort((a,b) => b.createdAt - a.createdAt);
+    if (filtered.length===0) { body.innerHTML=`<tr><td colspan="9" class="text-center py-8 text-slate-600">Tidak ada order</td></tr>`; return; }
+    filtered.forEach(o => {
+        const u  = allUsers[o.uid];
+        const dt = o.createdAt ? new Date(o.createdAt).toLocaleDateString('id-ID') : '-';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="text-xs font-mono text-slate-400">${o.orderId?.slice(-8)||o.oid?.slice(-8)||'-'}</td>
+            <td class="text-xs">${u?.name||o.buyerName||'User'}</td>
+            <td class="text-xs font-semibold">${o.productName||'-'}</td>
+            <td class="text-xs text-slate-400">${o.storeName||'-'}</td>
+            <td class="text-xs font-bold text-blue-400">Rp ${Number(o.totalPrice||0).toLocaleString('id-ID')}</td>
+            <td class="text-xs text-center">${o.qty||1}</td>
+            <td><span class="badge ${statusBadge[o.status||'pending']}">${statusLabel[o.status||'pending']}</span></td>
+            <td class="text-xs text-slate-500">${dt}</td>
+            <td><button onclick="openOrderStatus('${o.uid}','${o.oid}','${o.status||'pending'}')" class="btn btn-ghost text-xs py-1.5 px-2"><i class="fas fa-edit"></i></button></td>`;
+        body.appendChild(tr);
+    });
+};
+window.openOrderStatus = (uid, oid, status) => {
+    $('os_uid').value = uid; $('os_oid').value = oid;
+    $('os_status').value = status;
+    $('osOrderId').textContent = `ID: ${oid?.slice(-8)||'-'}`;
+    $('cancelReasonWrap').classList.toggle('hidden', status!=='cancelled');
+    openM('mOrderStatus');
+};
+$('os_status')?.addEventListener('change', function(){ $('cancelReasonWrap').classList.toggle('hidden', this.value!=='cancelled'); });
+window.saveOrderStatus = async () => {
+    const uid = $('os_uid').value, oid = $('os_oid').value, status = $('os_status').value;
+    const upd = { status };
+    if (status==='cancelled') upd.cancelReason = $('os_cancelReason')?.value||'-';
+    if (status==='completed') upd.completedAt  = Date.now();
+    try { await update(ref(db,`orders/${uid}/${oid}`),upd); closeM('mOrderStatus'); toast('Status Diupdate!',`Order ${oid.slice(-8)} → ${status}`); logAction('Update Order',`Order ${oid.slice(-8)} → ${status}`,'blue','receipt'); }
+    catch(e){ toast('Gagal',e.message,'error'); }
+};
+window.submitOrder = async () => {
+    const uid = $('ord_uid').value.trim(), pid = $('ord_pid').value.trim(), pname = $('ord_pname').value.trim();
+    const price = Number($('ord_price').value)||0, status = $('ord_status').value, store = $('ord_store').value.trim();
+    if (!uid||!pid||!pname) return toast('Error','UID Pembeli, ID Produk & Nama wajib!','error');
+    const orderId = `ORD-${Date.now()}-ADMIN`;
+    try {
+        await set(ref(db,`orders/${uid}/${orderId}`),{orderId,productId:pid,productName:pname,totalPrice:price,storeName:store,status,qty:1,createdAt:Date.now(),buyerName:allUsers[uid]?.name||'-',buyerEmail:allUsers[uid]?.email||'-',rated:false});
+        closeM('mAddOrder'); toast('Order Ditambahkan!',`"${pname}" berhasil dicatat`);
+        logAction('Tambah Order Manual',`"${pname}" untuk ${uid.slice(0,8)}`,'blue','plus');
+    } catch(e){ toast('Gagal',e.message,'error'); }
+};
+
+// ─── PENGUMUMAN ───
+window.submitAnnouncement = async () => {
+    const title = $('ann_title').value.trim(), body = $('ann_body').value.trim();
+    const type = $('ann_type').value, target = $('ann_target').value;
+    if (!title||!body) return toast('Error','Judul dan isi pengumuman wajib!','error');
+    try {
+        await push(ref(db,'announcements'),{title,body,type,target,createdAt:Date.now(),createdBy:adminUser?.email});
+        $('ann_title').value=''; $('ann_body').value='';
+        toast('Pengumuman Terkirim! 📢',`"${title}" berhasil dipublikasi`);
+        logAction('Buat Pengumuman',`"${title}" untuk ${target}`,'blue','bullhorn');
+    } catch(e){ toast('Gagal',e.message,'error'); }
+};
+window.deleteAnn = async id => {
+    if (!confirm('Hapus pengumuman ini?')) return;
+    await remove(ref(db,`announcements/${id}`));
+    toast('Dihapus','Pengumuman dihapus','warning');
+};
+
+// ─── CONFIRM MODAL ───
+const openConfirmModal = (title, desc, color='red', icon='exclamation-triangle') => {
+    $('confirmTitle').textContent = title;
+    $('confirmDesc').innerHTML    = desc;
+    $('confirmReason').value      = '';
+    $('confirmCode').value        = '';
+    $('confirmIcon').className    = `w-16 h-16 rounded-full bg-${color}-500/20 flex items-center justify-center mx-auto mb-4`;
+    $('confirmIconI').className   = `fas fa-${icon} text-${color}-400 text-2xl`;
+    $('confirmBtn').className     = `btn btn-${color} flex-1 justify-center`;
+    openM('mConfirm');
+};
+$('confirmBtn')?.addEventListener('click', async () => {
+    if (!pendingAction) return;
+    const reason = $('confirmReason').value.trim();
+    const code   = $('confirmCode').value.trim();
+    if (!reason) return toast('Error','Alasan wajib diisi!','error');
+    if (code !== adminCode) return toast('Error','Kode konfirmasi salah!','error');
+    try { await pendingAction(reason); pendingAction=null; closeM('mConfirm'); }
+    catch(e){ toast('Gagal',e.message,'error'); pendingAction=null; }
+});
+
+// ─── CLEAR DATA ───
+window.triggerClearData = path => {
+    const labels = {products:'Semua Produk',seller_applications:'Semua Toko',orders:'Semua Order'};
+    pendingAction = async reason => {
+        await remove(ref(db,path));
+        if (path==='seller_applications') {
+            const upd={};
+            Object.entries(allUsers).filter(([,u])=>u.role==='seller').forEach(([uid])=>{upd[`users/${uid}/role`]='buyer';upd[`users/${uid}/sellerStatus`]=null;});
+            if (Object.keys(upd).length) await update(ref(db),upd);
+        }
+        toast('Dihapus',`${labels[path]} berhasil dihapus`,'warning');
+        logAction('Clear Data',`${labels[path]} dihapus. Alasan: ${reason}`,'red','trash');
+    };
+    openConfirmModal(`Hapus ${labels[path]}`,`Aksi ini akan menghapus <strong>SEMUA</strong> data ${labels[path]} secara permanen!`,'red','exclamation-triangle');
+};
+window.clearLogs = async () => {
+    if (!confirm('Hapus semua log aktivitas?')) return;
+    await remove(ref(db,'admin/logs'));
+    toast('Log dihapus','Semua log aktivitas telah dihapus','warning');
+};
+
+// ─── ADMIN CODE ───
+window.saveAdminCode = async () => {
+    const code = $('newCode').value.trim();
+    if (!code||code.length<6) return toast('Error','Kode minimal 6 karakter!','error');
+    await set(ref(db,'admin/config/adminCode'),code);
+    $('newCode').value='';
+    toast('Berhasil','Kode konfirmasi admin diperbarui!');
+    logAction('Update Kode Admin','Kode konfirmasi diubah','yellow','key');
+};
+
+// ─── SITE CONFIG ───
+const loadConfigToForm = () => {
+    const c = siteConfig;
+    if($('cfg_title1'))       $('cfg_title1').value       = c.heroTitle1||'';
+    if($('cfg_title2'))       $('cfg_title2').value       = c.heroTitle2||'';
+    if($('cfg_tagline'))      $('cfg_tagline').value      = c.tagline||'';
+    if($('cfg_stat1n'))       $('cfg_stat1n').value       = c.stat1n||'';
+    if($('cfg_stat1l'))       $('cfg_stat1l').value       = c.stat1l||'';
+    if($('cfg_stat2n'))       $('cfg_stat2n').value       = c.stat2n||'';
+    if($('cfg_stat2l'))       $('cfg_stat2l').value       = c.stat2l||'';
+    if($('cfg_stat3n'))       $('cfg_stat3n').value       = c.stat3n||'';
+    if($('cfg_stat3l'))       $('cfg_stat3l').value       = c.stat3l||'';
+    if($('cfg_ctaLabel'))     $('cfg_ctaLabel').value     = c.ctaLabel||'';
+    if($('cfg_ctaTitle'))     $('cfg_ctaTitle').value     = c.ctaTitle||'';
+    if($('cfg_ctaDesc'))      $('cfg_ctaDesc').value      = c.ctaDesc||'';
+    if($('cfg_ctaBtn'))       $('cfg_ctaBtn').value       = c.ctaBtn||'';
+    if($('cfg_adminWa'))      $('cfg_adminWa').value      = c.adminWa||'';
+    if($('cfg_trustBadges'))  $('cfg_trustBadges').value  = c.trustBadges ? c.trustBadges.join(', ') : '';
+    if($('cfg_bannerEnabled')) $('cfg_bannerEnabled').checked = !!c.bannerEnabled;
+    if($('cfg_tickerEnabled')) $('cfg_tickerEnabled').checked = !!c.tickerEnabled;
+    tickerItems  = c.tickerItems || [];  renderTickerList();
+    featureItems = c.features || [{icon:'fa-shield-alt',color:'blue',title:'Transaksi Aman',desc:'Sistem escrow & garansi'},{icon:'fa-bolt',color:'green',title:'Proses Cepat',desc:'Pengiriman instan'},{icon:'fa-headset',color:'purple',title:'CS 24/7',desc:'Siap bantu kapanpun'},{icon:'fa-star',color:'yellow',title:'Produk Premium',desc:'Kualitas terjamin'}];
+    renderFeatureList();
+    categories = c.categories || []; renderCatList();
+};
+
+window.saveCfg = async part => {
+    const upd = {};
+    if (part==='hero'||part==='all') {
+        upd.heroTitle1 = $('cfg_title1').value.trim(); upd.heroTitle2 = $('cfg_title2').value.trim();
+        upd.tagline    = $('cfg_tagline').value.trim();
+        upd.stat1n=$('cfg_stat1n').value; upd.stat1l=$('cfg_stat1l').value;
+        upd.stat2n=$('cfg_stat2n').value; upd.stat2l=$('cfg_stat2l').value;
+        upd.stat3n=$('cfg_stat3n').value; upd.stat3l=$('cfg_stat3l').value;
+        upd.bannerEnabled = $('cfg_bannerEnabled').checked;
+        // Sync ke settings/banner (dibaca index.html)
+        await set(ref(db,'settings/banner'), {
+            enabled: $('cfg_bannerEnabled').checked,
+            title: $('cfg_title1').value.trim(), subtitle: $('cfg_title2').value.trim(),
+            tagline: $('cfg_tagline').value.trim(),
+            statProduk: $('cfg_stat1n').value, statPembeli: $('cfg_stat2n').value, statRating: $('cfg_stat3n').value
+        });
+    }
+    if (part==='ticker'||part==='all') {
+        upd.tickerItems = tickerItems; upd.tickerEnabled = $('cfg_tickerEnabled').checked;
+        await set(ref(db,'settings/promo_ticker'), { enabled: $('cfg_tickerEnabled').checked, items: tickerItems });
+    }
+    if (part==='features'||part==='all') upd.features = featureItems;
+    if (part==='categories'||part==='all') { upd.categories = categories; if($('cfg_trustBadges')) $('cfg_trustBadges').value = categories.join(', '); }
+    if (part==='trustBadges') upd.trustBadges = $('cfg_trustBadges').value.split(',').map(s=>s.trim()).filter(Boolean);
+    if (part==='cta'||part==='all') {
+        upd.ctaLabel=$('cfg_ctaLabel').value; upd.ctaTitle=$('cfg_ctaTitle').value;
+        upd.ctaDesc=$('cfg_ctaDesc').value; upd.ctaBtn=$('cfg_ctaBtn').value;
+        upd.adminWa=$('cfg_adminWa').value;
+    }
+    try {
+        await update(ref(db,'admin/config/site'),upd);
+        toast('Tersimpan! 🎉','Konfigurasi marketplace berhasil diperbarui');
+        logAction('Update Config',`Bagian "${part}" diupdate`,'green','save');
+    } catch(e){ toast('Gagal',e.message,'error'); }
+};
+
+// TICKER
+const renderTickerList = () => {
+    const el = $('tickerList'); if(!el) return;
+    el.innerHTML = '';
+    if (tickerItems.length===0) { el.innerHTML='<p class="text-slate-600 text-xs text-center py-3">Belum ada teks promo</p>'; return; }
+    tickerItems.forEach((t,i) => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2 bg-white/3 p-2.5 rounded-xl border border-white/5';
+        div.innerHTML = `<span class="text-sm flex-1 text-slate-300">${t}</span><button onclick="removeTicker(${i})" class="text-red-400 hover:text-red-300 transition shrink-0"><i class="fas fa-times text-xs"></i></button>`;
+        el.appendChild(div);
+    });
+};
+window.addTicker = () => { const v=$('newTicker').value.trim(); if(!v) return; tickerItems.push(v); $('newTicker').value=''; renderTickerList(); };
+window.removeTicker = i => { tickerItems.splice(i,1); renderTickerList(); };
+
+// FEATURES
+const renderFeatureList = () => {
+    const el = $('featureList'); if(!el) return;
+    el.innerHTML = '';
+    featureItems.forEach((f,i) => {
+        const div = document.createElement('div');
+        div.className = 'grid grid-cols-4 gap-2 items-center bg-white/3 p-2.5 rounded-xl border border-white/5';
+        div.innerHTML = `
+            <input type="text" value="${f.icon}" placeholder="fa-shield-alt" class="inp text-xs" onchange="featureItems[${i}].icon=this.value">
+            <input type="text" value="${f.title}" placeholder="Judul" class="inp text-xs" onchange="featureItems[${i}].title=this.value">
+            <input type="text" value="${f.desc}" placeholder="Deskripsi" class="inp text-xs" onchange="featureItems[${i}].desc=this.value">
+            <div class="flex items-center gap-1">
+                <select class="inp text-xs" onchange="featureItems[${i}].color=this.value">
+                    ${['blue','green','purple','yellow','red','cyan'].map(c=>`<option value="${c}" ${f.color===c?'selected':''}>${c}</option>`).join('')}
+                </select>
+                <button onclick="removeFeature(${i})" class="text-red-400 shrink-0"><i class="fas fa-times text-xs"></i></button>
+            </div>`;
+        el.appendChild(div);
+    });
+};
+window.addFeature  = () => { featureItems.push({icon:'fa-star',color:'blue',title:'Fitur Baru',desc:'Deskripsi'}); renderFeatureList(); };
+window.removeFeature = i => { featureItems.splice(i,1); renderFeatureList(); };
+
+// CATEGORIES
+const renderCatList = () => {
+    const el = $('catList'); if(!el) return;
+    el.innerHTML = '';
+    if (categories.length===0) { el.innerHTML='<p class="text-slate-600 text-xs">Belum ada kategori — tambahkan di atas</p>'; return; }
+    categories.forEach((c,i) => {
+        const span = document.createElement('div');
+        span.className = 'tag-chip';
+        span.innerHTML = `${c} <button onclick="removeCat(${i})" class="text-blue-400 hover:text-red-400 transition"><i class="fas fa-times text-[9px]"></i></button>`;
+        el.appendChild(span);
+    });
+};
+window.addCategory = () => { const v=$('newCat').value.trim(); if(!v||categories.includes(v)) return; categories.push(v); $('newCat').value=''; renderCatList(); };
+window.removeCat = i => { categories.splice(i,1); renderCatList(); };
+</script>
+</body>
+</html>
